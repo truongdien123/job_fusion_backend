@@ -1,0 +1,35 @@
+package com.tma.job_fusion_backend.models;
+
+import com.tma.job_fusion_backend.models.base.BaseEntity;
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "interview_feedbacks")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class InterviewFeedback extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "interview_schedule_id")
+    private InterviewSchedule interviewSchedule;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "interviewer_id")
+    private User interviewer;
+
+    private Double score;
+
+    private String strengths;
+
+    private String weaknesses;
+
+    private String recommendation;
+
+    @Column(columnDefinition = "TEXT")
+    private String comments;
+
+}
