@@ -2,7 +2,6 @@ package com.tma.job_fusion_backend.models;
 
 import com.tma.job_fusion_backend.enums.InterviewStatus;
 import com.tma.job_fusion_backend.enums.InterviewType;
-import com.tma.job_fusion_backend.models.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -17,7 +16,6 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class InterviewSchedule extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

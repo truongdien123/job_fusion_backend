@@ -1,6 +1,5 @@
 package com.tma.job_fusion_backend.models;
 
-import com.tma.job_fusion_backend.models.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -13,7 +12,6 @@ import tools.jackson.databind.JsonNode;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class CvMatchingResult extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

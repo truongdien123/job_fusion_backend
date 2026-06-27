@@ -1,4 +1,4 @@
-package com.tma.job_fusion_backend.models.base;
+package com.tma.job_fusion_backend.models;
 
 
 import jakarta.persistence.*;

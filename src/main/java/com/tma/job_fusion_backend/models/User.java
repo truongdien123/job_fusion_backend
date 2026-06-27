@@ -2,7 +2,6 @@ package com.tma.job_fusion_backend.models;
 
 import com.tma.job_fusion_backend.enums.UserStatus;
 import com.tma.job_fusion_backend.enums.UserType;
-import com.tma.job_fusion_backend.models.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class User extends BaseEntity {
 
     @Column(unique = true)
