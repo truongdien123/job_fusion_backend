@@ -21,5 +21,5 @@ public interface UserMapper {
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
     @Mapping(target = "updatedBy", ignore = true)
-    User toUser(SignUpRequest request);
+    User toEntity(SignUpRequest request);
 }

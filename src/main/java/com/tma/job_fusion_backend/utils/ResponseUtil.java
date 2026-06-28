@@ -1,6 +1,6 @@
 package com.tma.job_fusion_backend.utils;
 
-import com.tma.job_fusion_backend.base.ApiResponse;
+import com.tma.job_fusion_backend.commons.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 

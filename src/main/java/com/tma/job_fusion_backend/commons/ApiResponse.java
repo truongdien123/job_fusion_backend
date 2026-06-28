@@ -1,4 +1,4 @@
-package com.tma.job_fusion_backend.base;
+package com.tma.job_fusion_backend.commons;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;

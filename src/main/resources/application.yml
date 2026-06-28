@@ -20,3 +20,7 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: 3600000
   refresh-expiration: 86400000
+
+open:
+  api:
+    serverUrl: http://localhost:8080

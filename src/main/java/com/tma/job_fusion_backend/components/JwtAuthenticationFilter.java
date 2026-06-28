@@ -9,13 +9,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -34,14 +33,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 DecodedJWT decodedJWT = jwtUtil.validateToken(token);
                 String email = jwtUtil.getEmailFromToken(decodedJWT);
-                String type = jwtUtil.getUserTypeFromToken(decodedJWT);
 
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + type);
+                    UUID id = jwtUtil.getIdFromToken(decodedJWT);
+                    UUID tenantId = jwtUtil.getTenantIdFromToken(decodedJWT);
+                    String fullName = jwtUtil.getFullNameFromToken(decodedJWT);
+                    String type = jwtUtil.getUserTypeFromToken(decodedJWT);
+
+                    UserPrincipal principal = new UserPrincipal(id, email, tenantId, fullName, type);
+
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            email,
+                            principal,
                             null,
-                            Collections.singletonList(authority)
+                            principal.getAuthorities()
                     );
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
@@ -53,3 +57,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
+
