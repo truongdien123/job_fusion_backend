@@ -1,7 +1,6 @@
 package com.tma.job_fusion_backend.models;
 
 import com.tma.job_fusion_backend.enums.PermissionScope;
-import com.tma.job_fusion_backend.models.base.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -14,7 +13,6 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Permission extends BaseEntity {
 
     private String name;

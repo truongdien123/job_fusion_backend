@@ -1,7 +1,6 @@
 package com.tma.job_fusion_backend.models;
 
 import com.tma.job_fusion_backend.enums.TokenType;
-import com.tma.job_fusion_backend.models.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +12,6 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class UserToken extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,17 +1,17 @@
 package com.tma.job_fusion_backend.models;
 
 import com.tma.job_fusion_backend.enums.JobStatus;
-import com.tma.job_fusion_backend.models.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "job_postings")
+@Table(name = "job_postings", indexes = {
+    @Index(name = "idx_job_postings_tenant_id", columnList = "tenant_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class JobPosting extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

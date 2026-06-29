@@ -1,19 +1,19 @@
 package com.tma.job_fusion_backend.models;
 
 import com.tma.job_fusion_backend.enums.ApplicationStatus;
-import com.tma.job_fusion_backend.models.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "candidate_applications")
+@Table(name = "candidate_applications", indexes = {
+    @Index(name = "idx_candidate_applications_job_posting_id", columnList = "job_posting_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class CandidateApplication extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,7 +1,6 @@
 package com.tma.job_fusion_backend.models;
 
 import com.tma.job_fusion_backend.enums.TenantStatus;
-import com.tma.job_fusion_backend.models.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,7 +10,6 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Tenant extends BaseEntity {
 
     @Column(name = "company_name")
