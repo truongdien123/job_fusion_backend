@@ -1,9 +1,9 @@
 package com.tma.job_fusion_backend.controllers;
 
-import com.tma.job_fusion_backend.dtos.requests.SignInRequest;
-import com.tma.job_fusion_backend.dtos.requests.SignUpRequest;
-import com.tma.job_fusion_backend.dtos.responses.AuthResponse;
-import com.tma.job_fusion_backend.dtos.responses.UserResponse;
+import com.tma.job_fusion_backend.commons.EndpointConstant;
+import com.tma.job_fusion_backend.pojo.requests.*;
+import com.tma.job_fusion_backend.pojo.responses.AuthResponse;
+import com.tma.job_fusion_backend.pojo.responses.UserResponse;
 import com.tma.job_fusion_backend.services.AuthService;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,22 +13,40 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping(EndpointConstant.ENDPOINT_AUTH)
 @RequiredArgsConstructor
 @Tag(name = "authentication")
 public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/signup")
+    @PostMapping(EndpointConstant.ENDPOINT_SIGNUP)
     public ResponseEntity<?> signUp(@Valid @RequestBody SignUpRequest request) {
         UserResponse registeredUser = authService.signUp(request);
         return ResponseUtil.success("Sign up successful", registeredUser);
     }
 
-    @PostMapping("/signin")
+    @PostMapping(EndpointConstant.ENDPOINT_SIGNIN)
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest request) {
         AuthResponse response = authService.signIn(request);
         return ResponseUtil.success("Sign in successful", response);
+    }
+
+    @PostMapping(EndpointConstant.ENDPOINT_FORGOT_PASSWORD)
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseUtil.success("OTP sent to your email successfully", null);
+    }
+
+    @PostMapping(EndpointConstant.ENDPOINT_RESET_PASSWORD)
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseUtil.success("Password reset successfully", null);
+    }
+
+    @PostMapping(EndpointConstant.ENDPOINT_CHECK_OTP)
+    public ResponseEntity<?> checkOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        authService.checkOTP(request);
+        return ResponseUtil.success("Verify otp successfully", null);
     }
 }

@@ -1,4 +1,4 @@
-package com.tma.job_fusion_backend.dtos.requests;
+package com.tma.job_fusion_backend.pojo.requests;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;

@@ -1,11 +1,10 @@
 package com.tma.job_fusion_backend.mappers;
 
-import com.tma.job_fusion_backend.dtos.requests.SignUpRequest;
-import com.tma.job_fusion_backend.dtos.responses.UserResponse;
+import com.tma.job_fusion_backend.pojo.requests.SignUpRequest;
+import com.tma.job_fusion_backend.pojo.responses.UserResponse;
 import com.tma.job_fusion_backend.models.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
