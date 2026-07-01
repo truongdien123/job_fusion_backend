@@ -5,6 +5,7 @@ import com.tma.job_fusion_backend.models.EmailLog;
 import com.tma.job_fusion_backend.repositories.EmailLogRepository;
 import com.tma.job_fusion_backend.services.EmailService;
 import jakarta.mail.internet.MimeMessage;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -15,12 +16,10 @@ import org.thymeleaf.context.Context;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.logging.Logger;
 
 @Service
+@Log4j2
 public class EmailServiceImpl implements EmailService {
-
-    private static final Logger logger = Logger.getLogger(EmailServiceImpl.class.getName());
 
     @Value("${spring.mail.username}")
     private String from;
@@ -63,13 +62,13 @@ public class EmailServiceImpl implements EmailService {
                 mailSender.send(mimeMessage);
 
                 emailLog.setStatus(EmailStatus.SENT);
-                logger.info("Sent OTP HTML email to " + toEmail + " successfully.");
+                log.info("Sent OTP HTML email to {} successfully.", toEmail);
             } catch (Exception e) {
                 emailLog.setStatus(EmailStatus.FAILED);
-                logger.severe("Failed to send OTP HTML email to " + toEmail + ": " + e.getMessage());
+                log.error("Failed to send OTP HTML email to {}: {}", toEmail, e.getMessage());
             }
         } else {
-            logger.warning("[NO SMTP CONFIG] Simulated OTP HTML email to " + toEmail + " (HTML logged in database). Code: " + otp);
+            log.warn("[NO SMTP CONFIG] Simulated OTP HTML email to {} (HTML logged in database). Code: {}", toEmail, otp);
             emailLog.setStatus(EmailStatus.FAILED);
         }
 
