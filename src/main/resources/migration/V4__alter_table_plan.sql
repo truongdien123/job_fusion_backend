@@ -1,0 +1,2 @@
+ALTER TABLE plan
+    ADD COLUMN description VARCHAR(1000);

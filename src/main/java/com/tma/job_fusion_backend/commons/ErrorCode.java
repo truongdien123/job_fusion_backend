@@ -9,4 +9,6 @@ public final class ErrorCode {
     public static final String INVALID_PASSWORD = "Wrong password";
     public static final String ACCESS_DENIED = "Access denied";
     public static final String INACTIVE_USER = "User account is not active";
+    public static final String INVALID_JOB_POSTING = "Must fill number or choose unlimited";
+    public static final String INVALID_STAFF_ACCOUNT = "Must fill number or choose unlimited";
 }

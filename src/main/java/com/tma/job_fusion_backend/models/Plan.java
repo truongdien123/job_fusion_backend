@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-import tools.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @Entity
 @Table(name = "plan")
@@ -17,6 +17,9 @@ import tools.jackson.databind.JsonNode;
 public class Plan extends BaseEntity {
 
     private String name;
+
+    @Column(length = 1000)
+    private String description;
 
     @Column(name = "monthly_price")
     private Double monthlyPrice;

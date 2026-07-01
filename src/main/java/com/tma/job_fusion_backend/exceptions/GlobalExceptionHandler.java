@@ -1,15 +1,14 @@
 package com.tma.job_fusion_backend.exceptions;
 
+import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -26,6 +25,11 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
         return ResponseUtil.error(HttpStatus.BAD_REQUEST, "Validation failed: " + errorMsg);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDeniedException(AccessDeniedException ex) {
+        return ResponseUtil.error(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED);
     }
 
     @ExceptionHandler(Exception.class)
