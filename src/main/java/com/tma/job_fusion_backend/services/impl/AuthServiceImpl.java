@@ -106,8 +106,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+        User user = checkUserByEmail(request.getEmail());
 
         userTokenRepository.invalidateOldToken(user, TokenType.RESET_PASSWORD, LocalDateTime.now(ZoneOffset.UTC));
 
