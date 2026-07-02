@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.services.impl;
 
 import com.tma.job_fusion_backend.commons.ErrorCode;
+import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.pojo.requests.*;
 import com.tma.job_fusion_backend.pojo.responses.AuthResponse;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
@@ -15,8 +16,13 @@ import com.tma.job_fusion_backend.mappers.UserMapper;
 import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.models.UserToken;
 import com.tma.job_fusion_backend.enums.TokenType;
+import com.tma.job_fusion_backend.models.UserRole;
+import com.tma.job_fusion_backend.models.RoleTenant;
 import com.tma.job_fusion_backend.repositories.UserRepository;
 import com.tma.job_fusion_backend.repositories.UserTokenRepository;
+import com.tma.job_fusion_backend.repositories.UserRoleRepository;
+import com.tma.job_fusion_backend.repositories.RoleTenantRepository;
+import java.util.Optional;
 import com.tma.job_fusion_backend.services.AuthService;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.utils.JwtUtil;
@@ -43,6 +49,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final UserTokenRepository userTokenRepository;
     private final EmailService emailService;
+    private final UserRoleRepository userRoleRepository;
+    private final RoleTenantRepository roleTenantRepository;
 
     @Override
     @Transactional
@@ -80,12 +88,14 @@ public class AuthServiceImpl implements AuthService {
             throw new UserNotFoundException(ErrorCode.USER_NOT_FOUND);
         }
 
+        String resolvedRole = resolveUserRole(user);
+
         String token = jwtUtil.generateToken(
                 user.getId(),
                 user.getEmail(),
                 user.getTenant() != null ? user.getTenant().getId() : null,
                 user.getFullName(),
-                user.getType().name()
+                resolvedRole
         );
 
         String refreshToken = jwtUtil.generateRefreshToken(
@@ -93,13 +103,14 @@ public class AuthServiceImpl implements AuthService {
                 user.getEmail(),
                 user.getTenant() != null ? user.getTenant().getId() : null,
                 user.getFullName(),
-                user.getType().name()
+                resolvedRole
         );
-
+        UserResponse userResponse = userMapper.toUserResponse(user);
+        userResponse.setUserRole(resolvedRole);
         return AuthResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
-                .user(userMapper.toUserResponse(user))
+                .user(userResponse)
                 .build();
     }
 
@@ -152,6 +163,41 @@ public class AuthServiceImpl implements AuthService {
         }
         userToken.setUsed(true);
         userTokenRepository.save(userToken);
+    }
+
+    private String resolveUserRole(User user) {
+        if (user.getType() == UserType.CANDIDATE) {
+            return RoleConstant.CANDIDATE;
+        }
+        Optional<UserRole> userRoleOpt = userRoleRepository.findByUser(user);
+        if (userRoleOpt.isPresent()) {
+            UserRole userRole = userRoleOpt.get();
+            if (userRole.getRolePlatform() != null) {
+                return userRole.getRolePlatform().getName().equalsIgnoreCase("Super Admin")
+                        ? RoleConstant.SUPER_ADMIN
+                        : userRole.getRolePlatform().getName();
+            } else if (userRole.getRoleTemplate() != null) {
+                switch (userRole.getRoleTemplate().getName()) {
+                    case "Tenant Admin":
+                        return RoleConstant.TENANT_ADMIN;
+                    case "HR":
+                        return RoleConstant.HR;
+                    case "Interviewer":
+                        return RoleConstant.INTERVIEWER;
+                }
+            }
+        }
+        Optional<RoleTenant> roleTenantOpt = roleTenantRepository.findByUser(user);
+        if (roleTenantOpt.isPresent()) {
+            RoleTenant roleTenant = roleTenantOpt.get();
+            if (roleTenant.getName() != null) {
+                return roleTenant.getName();
+            } else if (roleTenant.getRoleTemplate() != null) {
+                return roleTenant.getRoleTemplate().getName();
+            }
+        }
+
+        return null;
     }
 
     private User checkUserByEmail(String email) {

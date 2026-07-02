@@ -6,6 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface PlanService {
-    PlanResponse createPlanResponse(CreatePlanRequest request);
+    PlanResponse createPlan(CreatePlanRequest request);
     Page<PlanResponse> getListPlan(Pageable pageable);
 }

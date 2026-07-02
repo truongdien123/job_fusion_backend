@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class FeatureDto {
 
-    private String name;
+    private String key;
 
-    private String description;
+    private String status;
 }
