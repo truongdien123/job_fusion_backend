@@ -7,8 +7,8 @@ import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.UUID;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
 
 @Getter
 @Setter
@@ -37,12 +37,12 @@ public abstract class BaseEntity {
 
     @PrePersist
     public void prePersist() {
-        createdAt = LocalDateTime.now(ZoneOffset.UTC);
+        createdAt = DateTimeUtil.nowUtc();
     }
 
     @PreUpdate
     public void preUpdate() {
-        updatedAt = LocalDateTime.now(ZoneOffset.UTC);
+        updatedAt = DateTimeUtil.nowUtc();
     }
 
 }

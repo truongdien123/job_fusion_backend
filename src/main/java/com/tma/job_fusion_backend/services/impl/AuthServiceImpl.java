@@ -36,8 +36,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.UUID;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -66,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setStatus(UserStatus.ACTIVE);
         user.setType(UserType.CANDIDATE);
-        user.setActivatedDate(LocalDateTime.now(ZoneOffset.UTC));
+        user.setActivatedDate(DateTimeUtil.nowUtc());
 
         User savedUser = userRepository.save(user);
         savedUser.setCreatedBy(savedUser.getId());
@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = checkUserByEmail(request.getEmail());
 
-        userTokenRepository.invalidateOldToken(user, TokenType.RESET_PASSWORD, LocalDateTime.now(ZoneOffset.UTC));
+        userTokenRepository.invalidateOldToken(user, TokenType.RESET_PASSWORD, DateTimeUtil.nowUtc());
 
         SecureRandom secureRandom = new SecureRandom();
         String otp = String.valueOf(100000 + secureRandom.nextInt(900000));
@@ -100,7 +100,7 @@ public class AuthServiceImpl implements AuthService {
         userToken.setUser(user);
         userToken.setToken(passwordEncoder.encode(otp));
         userToken.setTokenType(TokenType.RESET_PASSWORD);
-        userToken.setExpiredAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(Integer.parseInt(expireMinutes)));
+        userToken.setExpiredAt(DateTimeUtil.nowUtc().plusMinutes(Integer.parseInt(expireMinutes)));
         userToken.setUsed(false);
 
         userTokenRepository.save(userToken);
@@ -118,7 +118,7 @@ public class AuthServiceImpl implements AuthService {
                         user,
                         TokenType.RESET_PASSWORD,
                         false,
-                        LocalDateTime.now(ZoneOffset.UTC)
+                        DateTimeUtil.nowUtc()
                 )
                 .orElseThrow(() -> new InvalidTokenException(ErrorCode.INVALID_TOKEN));
 
@@ -143,7 +143,7 @@ public class AuthServiceImpl implements AuthService {
                         user,
                         TokenType.RESET_PASSWORD,
                         false,
-                        LocalDateTime.now(ZoneOffset.UTC)
+                        DateTimeUtil.nowUtc()
                 )
                 .orElseThrow(() -> new InvalidTokenException(ErrorCode.INVALID_TOKEN));
         if (!passwordEncoder.matches(request.getOtp(), userToken.getToken())) {

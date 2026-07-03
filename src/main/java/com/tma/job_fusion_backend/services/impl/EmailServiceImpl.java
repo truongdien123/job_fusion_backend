@@ -15,7 +15,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
 
 @Service
 @Log4j2
@@ -48,7 +48,7 @@ public class EmailServiceImpl implements EmailService {
         emailLog.setRecipient(toEmail);
         emailLog.setSubject(subject);
         emailLog.setBody(htmlBody);
-        emailLog.setSentAt(LocalDateTime.now(ZoneOffset.UTC));
+        emailLog.setSentAt(DateTimeUtil.nowUtc());
 
         if (mailSender != null) {
             try {
