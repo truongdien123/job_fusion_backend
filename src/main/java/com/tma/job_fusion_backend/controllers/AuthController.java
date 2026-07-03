@@ -49,4 +49,22 @@ public class AuthController {
         authService.checkOTP(request);
         return ResponseUtil.success("Verify otp successfully", null);
     }
+
+    @PostMapping(EndpointConstant.ENDPOINT_REFRESH)
+    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        AuthResponse response = authService.refreshToken(request);
+        return ResponseUtil.success("Refresh token successful", response);
+    }
+
+    @PostMapping(EndpointConstant.ENDPOINT_LOGOUT)
+    public ResponseEntity<?> logout() {
+        authService.logout();
+        return ResponseUtil.success("Logout successful", null);
+    }
+
+    @PostMapping(EndpointConstant.ENDPOINT_CHANGE_PASSWORD)
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(request);
+        return ResponseUtil.success("Password changed successfully", null);
+    }
 }
