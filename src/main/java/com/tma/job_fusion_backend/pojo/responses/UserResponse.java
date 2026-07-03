@@ -38,6 +38,9 @@ public class UserResponse {
     private UserStatus status;
     private UserType type;
 
+    @JsonProperty("user_role")
+    private String userRole;
+
     @JsonProperty("tenant_id")
     private UUID tenantId;
 }

@@ -4,8 +4,13 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.tma.job_fusion_backend.components.UserPrincipal;
 import jakarta.annotation.PostConstruct;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -39,7 +44,7 @@ public class JwtUtil {
                 .withClaim("id", id.toString())
                 .withClaim("fullName", fullName)
                 .withClaim("type", userType);
-        if (tenantId != null) {
+        if (ObjectUtils.isNotEmpty(tenantId)) {
             builder.withClaim("tenantId", tenantId.toString());
         }
         return builder.withIssuedAt(new Date())
@@ -53,7 +58,7 @@ public class JwtUtil {
                 .withClaim("id", id.toString())
                 .withClaim("fullName", fullName)
                 .withClaim("type", userType);
-        if (tenantId != null) {
+        if (ObjectUtils.isNotEmpty(tenantId)) {
             builder.withClaim("tenantId", tenantId.toString());
         }
         return builder.withIssuedAt(new Date())
@@ -75,16 +80,29 @@ public class JwtUtil {
 
     public UUID getIdFromToken(DecodedJWT decodedJWT) {
         String id = decodedJWT.getClaim("id").asString();
-        return id != null ? UUID.fromString(id) : null;
+        return StringUtils.isNotEmpty(id) ? UUID.fromString(id) : null;
     }
 
     public UUID getTenantIdFromToken(DecodedJWT decodedJWT) {
         String tenantId = decodedJWT.getClaim("tenantId").asString();
-        return tenantId != null ? UUID.fromString(tenantId) : null;
+        return StringUtils.isNotEmpty(tenantId) ? UUID.fromString(tenantId) : null;
     }
 
     public String getFullNameFromToken(DecodedJWT decodedJWT) {
         return decodedJWT.getClaim("fullName").asString();
+    }
+
+    public UserPrincipal getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal) {
+            return principal;
+        }
+        return null;
+    }
+
+    public UUID getCurrentUserId() {
+        UserPrincipal principal = getCurrentUser();
+        return ObjectUtils.isNotEmpty(principal) ? principal.getId() : null;
     }
 }
 

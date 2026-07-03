@@ -8,4 +8,6 @@ public final class EndpointConstant {
     public static final String ENDPOINT_FORGOT_PASSWORD = "/forgot-password";
     public static final String ENDPOINT_RESET_PASSWORD = "/reset-password";
     public static final String ENDPOINT_CHECK_OTP = "/check-otp";
+    public static final String ENDPOINT_PLAN = "/api/plan";
+    public static final String ENDPOINT_LIST = "/list";
 }
