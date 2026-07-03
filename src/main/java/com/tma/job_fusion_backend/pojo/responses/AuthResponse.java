@@ -14,6 +14,4 @@ public class AuthResponse {
     @JsonProperty("refresh_token")
     private String refreshToken;
     private UserResponse user;
-
-
 }

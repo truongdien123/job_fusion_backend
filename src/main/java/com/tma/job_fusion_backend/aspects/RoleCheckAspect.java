@@ -4,6 +4,7 @@ import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.components.UserPrincipal;
 import com.tma.job_fusion_backend.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -27,7 +28,7 @@ public class RoleCheckAspect {
         Method method = signature.getMethod();
 
         RequireRoles requireRoles = method.getAnnotation(RequireRoles.class);
-        if (requireRoles == null) {
+        if (ObjectUtils.isEmpty(requireRoles)) {
             try {
                 Method targetMethod = joinPoint.getTarget().getClass()
                         .getMethod(method.getName(), method.getParameterTypes());
@@ -36,16 +37,16 @@ public class RoleCheckAspect {
             }
         }
 
-        if (requireRoles == null) {
+        if (ObjectUtils.isEmpty(requireRoles)) {
             requireRoles = joinPoint.getTarget().getClass().getAnnotation(RequireRoles.class);
         }
 
-        if (requireRoles == null) {
+        if (ObjectUtils.isEmpty(requireRoles)) {
             return;
         }
 
         UserPrincipal principal = jwtUtil.getCurrentUser();
-        if (principal == null) {
+        if (ObjectUtils.isEmpty(principal)) {
             throw new AccessDeniedException("Access denied");
         }
 

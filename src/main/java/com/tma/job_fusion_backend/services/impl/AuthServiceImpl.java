@@ -27,6 +27,8 @@ import com.tma.job_fusion_backend.services.AuthService;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -84,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
             throw new UserNotActiveException(ErrorCode.INACTIVE_USER);
         }
 
-        if (user.getDeletedAt() != null) {
+        if (ObjectUtils.isNotEmpty(user.getDeletedAt())) {
             throw new UserNotFoundException(ErrorCode.USER_NOT_FOUND);
         }
 
@@ -93,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtUtil.generateToken(
                 user.getId(),
                 user.getEmail(),
-                user.getTenant() != null ? user.getTenant().getId() : null,
+                ObjectUtils.isNotEmpty(user.getTenant()) ? user.getTenant().getId() : null,
                 user.getFullName(),
                 resolvedRole
         );
@@ -101,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtUtil.generateRefreshToken(
                 user.getId(),
                 user.getEmail(),
-                user.getTenant() != null ? user.getTenant().getId() : null,
+                ObjectUtils.isNotEmpty(user.getTenant()) ? user.getTenant().getId() : null,
                 user.getFullName(),
                 resolvedRole
         );
@@ -166,17 +168,17 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private String resolveUserRole(User user) {
-        if (user.getType() == UserType.CANDIDATE) {
+        if (UserType.CANDIDATE == user.getType()) {
             return RoleConstant.CANDIDATE;
         }
         Optional<UserRole> userRoleOpt = userRoleRepository.findByUser(user);
         if (userRoleOpt.isPresent()) {
             UserRole userRole = userRoleOpt.get();
-            if (userRole.getRolePlatform() != null) {
+            if (ObjectUtils.isNotEmpty(userRole.getRolePlatform())) {
                 return userRole.getRolePlatform().getName().equalsIgnoreCase("Super Admin")
                         ? RoleConstant.SUPER_ADMIN
                         : userRole.getRolePlatform().getName();
-            } else if (userRole.getRoleTemplate() != null) {
+            } else if (ObjectUtils.isNotEmpty(userRole.getRoleTemplate())) {
                 switch (userRole.getRoleTemplate().getName()) {
                     case "Tenant Admin":
                         return RoleConstant.TENANT_ADMIN;
@@ -190,9 +192,9 @@ public class AuthServiceImpl implements AuthService {
         Optional<RoleTenant> roleTenantOpt = roleTenantRepository.findByUser(user);
         if (roleTenantOpt.isPresent()) {
             RoleTenant roleTenant = roleTenantOpt.get();
-            if (roleTenant.getName() != null) {
+            if (StringUtils.isNotEmpty(roleTenant.getName())) {
                 return roleTenant.getName();
-            } else if (roleTenant.getRoleTemplate() != null) {
+            } else if (ObjectUtils.isNotEmpty(roleTenant.getRoleTemplate())) {
                 return roleTenant.getRoleTemplate().getName();
             }
         }
