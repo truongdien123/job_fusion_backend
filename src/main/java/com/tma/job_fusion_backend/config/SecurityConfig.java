@@ -40,7 +40,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/signup",
             "/api/auth/signin",
-            "/api/auth/refresh",
+            "/api/auth/refresh-token",
             "/api/auth/logout",
             "/api/auth/forgot-password",
             "/api/auth/reset-password",

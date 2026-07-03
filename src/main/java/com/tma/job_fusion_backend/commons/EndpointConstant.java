@@ -10,4 +10,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_CHECK_OTP = "/check-otp";
     public static final String ENDPOINT_PLAN = "/api/plan";
     public static final String ENDPOINT_LIST = "/list";
+    public static final String ENDPOINT_REFRESH = "/refresh-token";
+    public static final String ENDPOINT_LOGOUT = "/logout";
+    public static final String ENDPOINT_CHANGE_PASSWORD = "/change-password";
 }

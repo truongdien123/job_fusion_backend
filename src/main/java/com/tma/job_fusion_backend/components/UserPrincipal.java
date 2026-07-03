@@ -2,6 +2,7 @@ package com.tma.job_fusion_backend.components;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,7 +25,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (role == null) {
+        if (StringUtils.isEmpty(role)) {
             return List.of();
         }
         String authorityName = role.startsWith("ROLE_") ? role : "ROLE_" + role;

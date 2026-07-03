@@ -12,4 +12,5 @@ public final class ErrorCode {
     public static final String INVALID_JOB_POSTING = "must_fill_number_or_choose_unlimited";
     public static final String INVALID_STAFF_ACCOUNT = "must_fill_number_or_choose_unlimited";
     public static final String INTERNAL_SERVER_ERROR = "an_unexpected_error_occurred_please_try_again_later.";
+    public static final String DUPLICATE_PASSWORD = "old_password_can_not_be_the_same_with_new_password";
 }

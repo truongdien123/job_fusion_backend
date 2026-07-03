@@ -1,17 +1,15 @@
 package com.tma.job_fusion_backend.services.impl;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.commons.RoleConstant;
+import com.tma.job_fusion_backend.components.UserPrincipal;
+import com.tma.job_fusion_backend.exceptions.*;
 import com.tma.job_fusion_backend.pojo.requests.*;
 import com.tma.job_fusion_backend.pojo.responses.AuthResponse;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
 import com.tma.job_fusion_backend.enums.UserStatus;
 import com.tma.job_fusion_backend.enums.UserType;
-import com.tma.job_fusion_backend.exceptions.EmailAlreadyExistsException;
-import com.tma.job_fusion_backend.exceptions.InvalidCredentialsException;
-import com.tma.job_fusion_backend.exceptions.UserNotActiveException;
-import com.tma.job_fusion_backend.exceptions.UserNotFoundException;
-import com.tma.job_fusion_backend.exceptions.InvalidTokenException;
 import com.tma.job_fusion_backend.mappers.UserMapper;
 import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.models.UserToken;
@@ -30,13 +28,16 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.util.UUID;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -65,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setStatus(UserStatus.ACTIVE);
         user.setType(UserType.CANDIDATE);
-        user.setActivatedDate(LocalDateTime.now(ZoneOffset.UTC));
+        user.setActivatedDate(DateTimeUtil.nowUtc());
 
         User savedUser = userRepository.save(user);
         savedUser.setCreatedBy(savedUser.getId());
@@ -82,7 +83,93 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException(ErrorCode.INVALID_PASSWORD);
         }
 
-        if (user.getStatus() != UserStatus.ACTIVE) {
+        return handleUserToResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        User user = checkUserByEmail(request.getEmail());
+
+        userTokenRepository.invalidateOldToken(user, TokenType.RESET_PASSWORD, DateTimeUtil.nowUtc());
+
+        SecureRandom secureRandom = new SecureRandom();
+        String otp = String.valueOf(100000 + secureRandom.nextInt(900000));
+
+        UserToken userToken = new UserToken();
+        userToken.setUser(user);
+        userToken.setToken(passwordEncoder.encode(otp));
+        userToken.setTokenType(TokenType.RESET_PASSWORD);
+        userToken.setExpiredAt(DateTimeUtil.nowUtc().plusMinutes(Integer.parseInt(expireMinutes)));
+        userToken.setUsed(false);
+
+        userTokenRepository.save(userToken);
+
+        emailService.sendResetPasswordOtp(user.getEmail(), otp);
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        User user = checkUserByEmail(request.getEmail());
+
+        UserToken userToken = userTokenRepository
+                .findByUserAndTokenTypeAndUsedAndExpiredAtAfter(
+                        user,
+                        TokenType.RESET_PASSWORD,
+                        false,
+                        DateTimeUtil.nowUtc()
+                )
+                .orElseThrow(() -> new InvalidTokenException(ErrorCode.INVALID_TOKEN));
+
+        if (!passwordEncoder.matches(request.getOtp(), userToken.getToken())) {
+            throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
+        }
+
+        userToken.setUsed(true);
+        userTokenRepository.save(userToken);
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void checkOTP(VerifyOtpRequest request) {
+        User user = checkUserByEmail(request.getEmail());
+
+        UserToken userToken = userTokenRepository
+                .findByUserAndTokenTypeAndUsedAndExpiredAtAfter(
+                        user,
+                        TokenType.RESET_PASSWORD,
+                        false,
+                        DateTimeUtil.nowUtc()
+                )
+                .orElseThrow(() -> new InvalidTokenException(ErrorCode.INVALID_TOKEN));
+        if (!passwordEncoder.matches(request.getOtp(), userToken.getToken())) {
+            throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+        DecodedJWT decodedJWT;
+        UUID userId;
+        try {
+            decodedJWT = jwtUtil.validateToken(request.getRefreshToken());
+             userId = jwtUtil.getIdFromToken(decodedJWT);
+        } catch (Exception e) {
+            throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
+        }
+
+        User user = checkUserById(userId);
+
+        return handleUserToResponse(user);
+    }
+
+    private AuthResponse handleUserToResponse(User user) {
+        if (UserStatus.ACTIVE != user.getStatus()) {
             throw new UserNotActiveException(ErrorCode.INACTIVE_USER);
         }
 
@@ -107,6 +194,7 @@ public class AuthServiceImpl implements AuthService {
                 user.getFullName(),
                 resolvedRole
         );
+
         UserResponse userResponse = userMapper.toUserResponse(user);
         userResponse.setUserRole(resolvedRole);
         return AuthResponse.builder()
@@ -117,54 +205,30 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
-    public void forgotPassword(ForgotPasswordRequest request) {
-        User user = checkUserByEmail(request.getEmail());
-
-        userTokenRepository.invalidateOldToken(user, TokenType.RESET_PASSWORD, LocalDateTime.now(ZoneOffset.UTC));
-
-        SecureRandom secureRandom = new SecureRandom();
-        String otp = String.valueOf(100000 + secureRandom.nextInt(900000));
-
-        UserToken userToken = new UserToken();
-        userToken.setUser(user);
-        userToken.setToken(passwordEncoder.encode(otp));
-        userToken.setTokenType(TokenType.RESET_PASSWORD);
-        userToken.setExpiredAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(Integer.parseInt(expireMinutes)));
-        userToken.setUsed(false);
-
-        userTokenRepository.save(userToken);
-
-        emailService.sendResetPasswordOtp(user.getEmail(), otp);
+    public void logout() {
+        SecurityContextHolder.clearContext();
     }
 
     @Override
     @Transactional
-    public void resetPassword(ResetPasswordRequest request) {
-        User user = checkUserByEmail(request.getEmail());
+    public void changePassword(ChangePasswordRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (ObjectUtils.isEmpty(authentication) || !(authentication.getPrincipal() instanceof UserPrincipal)) {
+            throw new InvalidCredentialsException(ErrorCode.INVALID_PASSWORD);
+        }
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+
+        User user = checkUserById(principal.getId());
+
+        if (request.getOldPassword().equals(request.getNewPassword())) {
+            throw new InvalidPasswordException(ErrorCode.DUPLICATE_PASSWORD);
+        }
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException(ErrorCode.INVALID_PASSWORD);
+        }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
-    }
-
-    @Override
-    @Transactional
-    public void checkOTP(VerifyOtpRequest request) {
-        User user = checkUserByEmail(request.getEmail());
-
-        UserToken userToken = userTokenRepository
-                .findByUserAndTokenTypeAndUsedAndExpiredAtAfter(
-                        user,
-                        TokenType.RESET_PASSWORD,
-                        false,
-                        LocalDateTime.now(ZoneOffset.UTC)
-                )
-                .orElseThrow(() -> new InvalidTokenException(ErrorCode.INVALID_TOKEN));
-        if (!passwordEncoder.matches(request.getOtp(), userToken.getToken())) {
-            throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
-        }
-        userToken.setUsed(true);
-        userTokenRepository.save(userToken);
     }
 
     private String resolveUserRole(User user) {
@@ -204,6 +268,11 @@ public class AuthServiceImpl implements AuthService {
 
     private User checkUserByEmail(String email) {
         return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private User checkUserById(UUID id) {
+        return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
     }
 }

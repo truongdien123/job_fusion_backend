@@ -10,4 +10,7 @@ public interface AuthService {
     void forgotPassword(ForgotPasswordRequest request);
     void resetPassword(ResetPasswordRequest request);
     void checkOTP(VerifyOtpRequest request);
+    AuthResponse refreshToken(RefreshTokenRequest request);
+    void logout();
+    void changePassword(ChangePasswordRequest request);
 }
