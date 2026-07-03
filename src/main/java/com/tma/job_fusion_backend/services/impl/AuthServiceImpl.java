@@ -145,7 +145,7 @@ public class AuthServiceImpl implements AuthService {
                         false,
                         DateTimeUtil.nowUtc()
                 )
-                .orElseThrow(() -> new InvalidTokenException(ErrorCode.INVALID_TOKEN));
+                .orElseThrow(() -> new InvalidTokenException(ErrorCode.EXPIRED_OTP));
         if (!passwordEncoder.matches(request.getOtp(), userToken.getToken())) {
             throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
         }
