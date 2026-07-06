@@ -1,5 +1,6 @@
 package com.tma.job_fusion_backend.pojo.requests;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -12,9 +13,11 @@ import lombok.*;
 public class ChangePasswordRequest {
 
     @NotBlank(message = "Old password is required")
+    @JsonProperty("old_password")
     private String oldPassword;
 
     @NotBlank(message = "New password is required")
     @Size(min = 8, message = "New password must be at least 8 characters")
+    @JsonProperty("new_password")
     private String newPassword;
 }

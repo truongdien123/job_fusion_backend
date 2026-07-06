@@ -14,4 +14,6 @@ public final class ErrorCode {
     public static final String INTERNAL_SERVER_ERROR = "an_unexpected_error_occurred_please_try_again_later.";
     public static final String DUPLICATE_PASSWORD = "old_password_can_not_be_the_same_with_new_password";
     public static final String EXPIRED_OTP = "otp_has_expired_please_request_a_new_one";
+    public static final String PLAN_NOT_FOUND = "plan_not_found";
+    public static final String ROLE_NOT_FOUND = "role_not_found";
 }

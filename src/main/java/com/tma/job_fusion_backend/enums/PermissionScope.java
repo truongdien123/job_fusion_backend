@@ -1,6 +1,1 @@
-package com.tma.job_fusion_backend.enums;
-
-public enum PermissionScope {
-    PLATFORM,
-    TENANT
-}
+// Deprecated/Deleted during roles & permissions refactoring

@@ -1,5 +1,6 @@
 package com.tma.job_fusion_backend.pojo.responses;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import org.springframework.data.domain.Page;
 import java.util.List;
@@ -13,7 +14,11 @@ public class PageResponse<T> {
     private List<T> content;
     private int page;
     private int size;
+
+    @JsonProperty("total_elements")
     private long totalElements;
+
+    @JsonProperty("total_pages")
     private int totalPages;
     private boolean last;
 

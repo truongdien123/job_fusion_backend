@@ -4,6 +4,7 @@ import com.tma.job_fusion_backend.enums.EmailStatus;
 import com.tma.job_fusion_backend.models.EmailLog;
 import com.tma.job_fusion_backend.repositories.EmailLogRepository;
 import com.tma.job_fusion_backend.services.EmailService;
+import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -69,6 +70,52 @@ public class EmailServiceImpl implements EmailService {
             }
         } else {
             log.warn("[NO SMTP CONFIG] Simulated OTP HTML email to {} (HTML logged in database). Code: {}", toEmail, otp);
+            emailLog.setStatus(EmailStatus.FAILED);
+        }
+
+        emailLogRepository.save(emailLog);
+    }
+
+    @Override
+    @Async("mailExecutor")
+    public void sendTenantCreatedEmail(TenantCreatedEmailDto dto) {
+        String subject = "Your new Tenant workspace is ready";
+
+        Context context = new Context();
+        context.setVariable("adminName", dto.getAdminName());
+        context.setVariable("tenantName", dto.getTenantName());
+        context.setVariable("loginUrl", dto.getLoginUrl());
+        context.setVariable("dashboardImageUrl", dto.getDashboardImageUrl());
+        context.setVariable("adminEmail", dto.getToEmail());
+        context.setVariable("adminPassword", dto.getAdminPassword());
+
+        String htmlBody = templateEngine.process("tenant-created-email", context);
+
+        EmailLog emailLog = new EmailLog();
+        emailLog.setRecipient(dto.getToEmail());
+        emailLog.setSubject(subject);
+        emailLog.setBody(htmlBody);
+        emailLog.setSentAt(DateTimeUtil.nowUtc());
+
+        if (mailSender != null) {
+            try {
+                MimeMessage mimeMessage = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+                helper.setFrom("Job Fusion <" + from + ">");
+                helper.setTo(dto.getToEmail());
+                helper.setSubject(subject);
+                helper.setText(htmlBody, true);
+
+                mailSender.send(mimeMessage);
+
+                emailLog.setStatus(EmailStatus.SENT);
+                log.info("Sent Tenant Created HTML email to {} successfully.", dto.getToEmail());
+            } catch (Exception e) {
+                emailLog.setStatus(EmailStatus.FAILED);
+                log.error("Failed to send Tenant Created HTML email to {}: {}", dto.getToEmail(), e.getMessage());
+            }
+        } else {
+            log.warn("[NO SMTP CONFIG] Simulated Tenant Created HTML email to {} (HTML logged in database). Tenant: {}", dto.getToEmail(), dto.getTenantName());
             emailLog.setStatus(EmailStatus.FAILED);
         }
 

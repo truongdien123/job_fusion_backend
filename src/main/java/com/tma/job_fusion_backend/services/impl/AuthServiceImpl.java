@@ -15,11 +15,9 @@ import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.models.UserToken;
 import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.models.UserRole;
-import com.tma.job_fusion_backend.models.RoleTenant;
 import com.tma.job_fusion_backend.repositories.UserRepository;
 import com.tma.job_fusion_backend.repositories.UserTokenRepository;
 import com.tma.job_fusion_backend.repositories.UserRoleRepository;
-import com.tma.job_fusion_backend.repositories.RoleTenantRepository;
 import java.util.Optional;
 import com.tma.job_fusion_backend.services.AuthService;
 import com.tma.job_fusion_backend.services.EmailService;
@@ -53,7 +51,6 @@ public class AuthServiceImpl implements AuthService {
     private final UserTokenRepository userTokenRepository;
     private final EmailService emailService;
     private final UserRoleRepository userRoleRepository;
-    private final RoleTenantRepository roleTenantRepository;
 
     @Override
     @Transactional
@@ -238,31 +235,23 @@ public class AuthServiceImpl implements AuthService {
         Optional<UserRole> userRoleOpt = userRoleRepository.findByUser(user);
         if (userRoleOpt.isPresent()) {
             UserRole userRole = userRoleOpt.get();
-            if (ObjectUtils.isNotEmpty(userRole.getRolePlatform())) {
-                return userRole.getRolePlatform().getName().equalsIgnoreCase("Super Admin")
-                        ? RoleConstant.SUPER_ADMIN
-                        : userRole.getRolePlatform().getName();
-            } else if (ObjectUtils.isNotEmpty(userRole.getRoleTemplate())) {
-                switch (userRole.getRoleTemplate().getName()) {
-                    case "Tenant Admin":
-                        return RoleConstant.TENANT_ADMIN;
-                    case "HR":
-                        return RoleConstant.HR;
-                    case "Interviewer":
-                        return RoleConstant.INTERVIEWER;
+            if (ObjectUtils.isNotEmpty(userRole.getRole())) {
+                String roleName = userRole.getRole().getName();
+                if ("Super Admin".equalsIgnoreCase(roleName)) {
+                    return RoleConstant.SUPER_ADMIN;
                 }
+                if ("Tenant Admin".equalsIgnoreCase(roleName)) {
+                    return RoleConstant.TENANT_ADMIN;
+                }
+                if ("HR".equalsIgnoreCase(roleName)) {
+                    return RoleConstant.HR;
+                }
+                if ("Interviewer".equalsIgnoreCase(roleName)) {
+                    return RoleConstant.INTERVIEWER;
+                }
+                return roleName;
             }
         }
-        Optional<RoleTenant> roleTenantOpt = roleTenantRepository.findByUser(user);
-        if (roleTenantOpt.isPresent()) {
-            RoleTenant roleTenant = roleTenantOpt.get();
-            if (StringUtils.isNotEmpty(roleTenant.getName())) {
-                return roleTenant.getName();
-            } else if (ObjectUtils.isNotEmpty(roleTenant.getRoleTemplate())) {
-                return roleTenant.getRoleTemplate().getName();
-            }
-        }
-
         return null;
     }
 

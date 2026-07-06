@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your JobFusion Tenant Workspace is Ready</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #334155;
+            -webkit-font-smoothing: antialiased;
+        }
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #f8fafc;
+            padding: 40px 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);
+        }
+        .header {
+            padding: 30px 40px 20px 40px;
+            text-align: center;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            color: #c2410c;
+            text-decoration: none;
+            letter-spacing: -0.03em;
+        }
+        .content {
+            padding: 30px 40px;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 20px;
+            line-height: 1.3;
+        }
+        .greeting {
+            font-size: 15px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 16px;
+        }
+        .body-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #475569;
+            margin-bottom: 28px;
+        }
+        .tenant-highlight {
+            color: #0f172a;
+            font-weight: 700;
+        }
+        .btn-container {
+            margin-bottom: 28px;
+        }
+        .btn {
+            background-color: #c2410c;
+            color: #ffffff !important;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        .image-card {
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            margin-bottom: 28px;
+            background-color: #f8fafc;
+        }
+        .dashboard-img {
+            width: 100%;
+            display: block;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .badge-container {
+            padding: 12px 16px;
+            background-color: #f8fafc;
+            font-size: 11px;
+            font-weight: 700;
+            color: #c2410c;
+            letter-spacing: 0.05em;
+        }
+        .security-box {
+            background-color: #fef2f2;
+            border: 1px solid #fee2e2;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 28px;
+        }
+        .security-text {
+            margin: 0;
+            color: #991b1b;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .security-link {
+            color: #991b1b;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        .help-box {
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 24px 40px;
+        }
+        .help-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        .help-text {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #475569;
+        }
+        .help-link {
+            color: #c2410c;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footer {
+            padding: 32px 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+        }
+        .footer-brand {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+        }
+        .footer-links {
+            margin-bottom: 16px;
+        }
+        .footer-link {
+            color: #64748b;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+        .footer-disclaimer {
+            margin: 0 0 8px 0;
+            line-height: 1.5;
+        }
+        .footer-copyright {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <div class="header">
+                <table align="center" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                    <tr>
+                        <td style="vertical-align: middle; padding-right: 10px;">
+                            <div style="background-color: #f05423; border-radius: 8px; width: 38px; height: 38px; position: relative;">
+                                <div style="position: absolute; width: 6px; height: 6px; background-color: #ffffff; border-radius: 50%; top: 9px; left: 16px;"></div>
+                                <div style="position: absolute; width: 6px; height: 6px; background-color: #ffffff; border-radius: 50%; top: 22px; left: 9px;"></div>
+                                <div style="position: absolute; width: 6px; height: 6px; background-color: #ffffff; border-radius: 50%; top: 22px; left: 23px;"></div>
+                                <div style="position: absolute; width: 8px; height: 8px; background-color: #ffffff; border-radius: 50%; top: 15px; left: 15px;"></div>
+                                <div style="position: absolute; width: 2px; height: 8px; background-color: #ffffff; top: 12px; left: 18px;"></div>
+                                <div style="position: absolute; width: 8px; height: 2px; background-color: #ffffff; top: 19px; left: 11px; transform: rotate(30deg);"></div>
+                                <div style="position: absolute; width: 8px; height: 2px; background-color: #ffffff; top: 19px; left: 19px; transform: rotate(-30deg);"></div>
+                            </div>
+                        </td>
+                        <td style="vertical-align: middle;">
+                            <span style="font-size: 28px; font-weight: 800; color: #bf360c; font-family: 'Inter', sans-serif; letter-spacing: -0.02em;">JobFusion</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="content">
+                <h2 class="title">Your new Tenant workspace is ready</h2>
+                
+                <div class="greeting" th:text="${adminName != null ? 'Hello ' + adminName + ',' : 'Hello Administrator,'}">Hello Administrator,</div>
+                
+                <div style="background-color: #f3f6fc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+                    <p style="margin: 0 0 12px 0; color: #1e293b; font-size: 14px; font-weight: bold; font-family: 'Inter', sans-serif;">
+                        Your temporary credentials:
+                    </p>
+                    <p style="margin: 0 0 8px 0; color: #334155; font-size: 14px; font-family: 'Inter', sans-serif;">
+                        Email: <span th:text="${adminEmail}" style="font-family: 'Courier New', Courier, monospace; font-weight: bold; color: #c2410c; font-size: 15px;">admin@globaltalentcorp.com</span>
+                    </p>
+                    <p style="margin: 0 0 12px 0; color: #334155; font-size: 14px; font-family: 'Inter', sans-serif;">
+                        Temporary Password: <span th:text="${adminPassword}" style="font-family: 'Courier New', Courier, monospace; font-weight: bold; color: #c2410c; font-size: 15px;">Jf@Tmp2024!xK</span>
+                    </p>
+                    <table border="0" cellpadding="0" cellspacing="0" style="margin-top: 12px;">
+                        <tr>
+                            <td style="vertical-align: middle; padding-right: 6px; font-size: 14px; color: #b45309;">⚠️</td>
+                            <td style="vertical-align: middle; font-size: 13px; color: #64748b; font-family: 'Inter', sans-serif;">
+                                You will be required to change this password on first login.
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <p class="body-text">
+                    The JobFusion Enterprise environment for <span class="tenant-highlight" th:text="${tenantName}">Global Talent Corp</span> has been successfully provisioned. You can now access your admin dashboard to configure recruitment funnels, invite team members, and set up your talent intelligence preferences.
+                </p>
+                
+                <div class="btn-container">
+                    <a th:href="${loginUrl != null ? loginUrl : '#'}" class="btn">Go to Login</a>
+                </div>
+                
+                <div class="image-card">
+                    <img th:src="${dashboardImageUrl != null ? dashboardImageUrl : 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80'}" alt="Workspace Dashboard" class="dashboard-img" />
+                    <div class="badge-container">
+                        ✨ AI INSIGHTS ENABLED
+                    </div>
+                </div>
+                
+                <div class="security-box">
+                    <p class="security-text">
+                        🛡️ <strong>Security Notice:</strong> If you didn't expect this email, please secure your account and contact <a href="mailto:admin@jobfusion.io" class="security-link">admin@jobfusion.io</a> immediately.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="help-box">
+                <h4 class="help-title">Need help?</h4>
+                <p class="help-text">
+                    Our technical team is standing by to assist with your workspace migration. Contact us at <a href="mailto:support@jobfusion.io" class="help-link">support@jobfusion.io</a> or visit our <a href="#" class="help-link">Help Center</a>.
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="footer-brand">JOBFUSION INTELLIGENCE</div>
+            <div class="footer-links">
+                <a href="#" class="footer-link">Privacy Policy</a> |
+                <a href="#" class="footer-link">Terms of Service</a> |
+                <a href="#" class="footer-link">Security</a>
+            </div>
+            <p class="footer-disclaimer">
+                This is an automated transactional message regarding your JobFusion account settings. Replies to this address are not monitored.
+            </p>
+            <p class="footer-copyright">
+                &copy; 2024 JobFusion Inc. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

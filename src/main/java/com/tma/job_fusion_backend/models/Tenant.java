@@ -24,9 +24,6 @@ public class Tenant extends BaseEntity {
 
     private String region;
 
-    @Column(unique = true, name = "company_code")
-    private String companyCode;
-
     @Enumerated(EnumType.STRING)
     private TenantStatus status;
 
