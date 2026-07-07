@@ -22,7 +22,6 @@ public class SignUpRequest {
     private String password;
 
     @NotBlank(message = "Full name is required")
-    @JsonProperty("full_name")
     private String fullName;
 
     private String phone;

@@ -12,6 +12,5 @@ import lombok.*;
 public class RefreshTokenRequest {
 
     @NotBlank(message = "Refresh token is required")
-    @JsonProperty("refresh_token")
     private String refreshToken;
 }

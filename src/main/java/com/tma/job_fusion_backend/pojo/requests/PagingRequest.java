@@ -17,12 +17,10 @@ import org.springframework.util.StringUtils;
 @AllArgsConstructor
 public class PagingRequest<T> {
 
-    @JsonProperty("sort_field")
     private String sortField;
 
     private T filters;
 
-    @JsonProperty("sort_by")
     private Sort.Direction sortBy;
     private int page;
     private int size;

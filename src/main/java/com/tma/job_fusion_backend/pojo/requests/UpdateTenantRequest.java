@@ -15,7 +15,6 @@ import java.util.UUID;
 public class UpdateTenantRequest {
 
     @NotBlank(message = "Company name is required")
-    @JsonProperty("company_name")
     private String companyName;
 
     private String domain;
@@ -26,6 +25,5 @@ public class UpdateTenantRequest {
 
     private TenantStatus status;
 
-    @JsonProperty("plan_id")
     private UUID planId;
 }

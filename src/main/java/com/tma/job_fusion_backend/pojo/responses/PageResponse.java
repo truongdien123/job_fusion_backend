@@ -15,10 +15,8 @@ public class PageResponse<T> {
     private int page;
     private int size;
 
-    @JsonProperty("total_elements")
     private long totalElements;
 
-    @JsonProperty("total_pages")
     private int totalPages;
     private boolean last;
 

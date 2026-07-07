@@ -24,6 +24,5 @@ public class ResetPasswordRequest {
 
     @NotBlank(message = "New password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
-    @JsonProperty("new_password")
     private String newPassword;
 }
