@@ -17,6 +17,7 @@ import com.tma.job_fusion_backend.utils.PasswordUtil;
 import com.tma.job_fusion_backend.mappers.TenantMapper;
 import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.tma.job_fusion_backend.pojo.requests.UpdateTenantRequest;
+import com.tma.job_fusion_backend.commons.RoleConstant;
+import com.tma.job_fusion_backend.components.UserPrincipal;
+import org.springframework.security.access.AccessDeniedException;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -101,11 +108,105 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional(readOnly = true)
     public Page<TenantResponse> getListTenant(Pageable pageable) {
-        return tenantRepository.findAll(pageable).map(tenant -> {
-            UUID adminUserId = userRoleRepository.findTenantAdminByTenantId(tenant.getId())
-                    .map(User::getId)
-                    .orElse(null);
-            return tenantMapper.toTenantResponse(tenant, adminUserId);
-        });
+        return tenantRepository.findAllActiveTenants(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TenantResponse getTenantDetail(UUID id) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND));
+
+        if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
+            throw new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND);
+        }
+
+        UUID adminUserId = userRoleRepository.findTenantAdminByTenantId(tenant.getId())
+                .map(User::getId)
+                .orElse(null);
+
+        return tenantMapper.toTenantResponse(tenant, adminUserId);
+    }
+
+    @Override
+    @Transactional
+    public TenantResponse updateTenant(UUID id, UpdateTenantRequest request) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND));
+
+        if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
+            throw new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND);
+        }
+
+        UserPrincipal currentUser = jwtUtil.getCurrentUser();
+        if (ObjectUtils.isEmpty(currentUser)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        boolean isSuperAdmin = RoleConstant.SUPER_ADMIN.equalsIgnoreCase(currentUser.getRole());
+        if (!isSuperAdmin) {
+            if (ObjectUtils.isEmpty(currentUser.getTenantId()) || !currentUser.getTenantId().equals(id)) {
+                throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+            }
+            if (ObjectUtils.isNotEmpty(request.getStatus()) && request.getStatus() != tenant.getStatus()) {
+                throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+            }
+            if (ObjectUtils.isNotEmpty(request.getPlanId()) && (ObjectUtils.isEmpty(tenant.getPlan()) || !request.getPlanId().equals(tenant.getPlan().getId()))) {
+                throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+
+        if (ObjectUtils.isNotEmpty(request.getPlanId()) && (ObjectUtils.isEmpty(tenant.getPlan()) || !request.getPlanId().equals(tenant.getPlan().getId()))) {
+            Plan plan = planRepository.findById(request.getPlanId())
+                    .orElseThrow(() -> new PlanNotFoundException(ErrorCode.PLAN_NOT_FOUND));
+            tenant.setPlan(plan);
+        }
+
+        if (ObjectUtils.isNotEmpty(request.getStatus())) {
+            tenant.setStatus(request.getStatus());
+        }
+
+        tenant.setCompanyName(request.getCompanyName());
+        tenant.setDomain(request.getDomain());
+        tenant.setIndustry(request.getIndustry());
+        tenant.setCompanySize(request.getCompanySize());
+        tenant.setRegion(request.getRegion());
+        tenant.setUpdatedBy(currentUser.getId());
+
+        Tenant savedTenant = tenantRepository.save(tenant);
+
+        UUID adminUserId = userRoleRepository.findTenantAdminByTenantId(savedTenant.getId())
+                .map(User::getId)
+                .orElse(null);
+
+        return tenantMapper.toTenantResponse(savedTenant, adminUserId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTenant(UUID id) {
+        Tenant tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND));
+
+        if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
+            throw new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND);
+        }
+
+        UserPrincipal currentUser = jwtUtil.getCurrentUser();
+        UUID currentUserId = ObjectUtils.isNotEmpty(currentUser) ? currentUser.getId() : null;
+
+        LocalDateTime now = DateTimeUtil.nowUtc();
+        tenant.setDeletedAt(now);
+        tenant.setStatus(TenantStatus.INACTIVE);
+        tenant.setUpdatedBy(currentUserId);
+        tenantRepository.save(tenant);
+
+        List<User> tenantUsers = userRepository.findAllByTenantIdAndDeletedAtIsNull(id);
+        for (User user : tenantUsers) {
+            user.setDeletedAt(now);
+            user.setStatus(UserStatus.DISABLED);
+            user.setUpdatedBy(currentUserId);
+        }
+        userRepository.saveAll(tenantUsers);
     }
 }

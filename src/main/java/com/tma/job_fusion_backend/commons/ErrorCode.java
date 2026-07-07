@@ -16,4 +16,5 @@ public final class ErrorCode {
     public static final String EXPIRED_OTP = "otp_has_expired_please_request_a_new_one";
     public static final String PLAN_NOT_FOUND = "plan_not_found";
     public static final String ROLE_NOT_FOUND = "role_not_found";
+    public static final String TENANT_NOT_FOUND = "tenant_not_found";
 }

@@ -17,6 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.tma.job_fusion_backend.pojo.requests.UpdateTenantRequest;
+import java.util.UUID;
+
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_TENANT)
 @RequiredArgsConstructor
@@ -38,5 +41,26 @@ public class TenantController {
         Pageable pageable = request.toPageable();
         Page<TenantResponse> listTenant = tenantService.getListTenant(pageable);
         return ResponseUtil.success("Get tenants successfully", PageResponse.of(listTenant));
+    }
+
+    @GetMapping("/{id}")
+    @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
+    public ResponseEntity<?> getTenantDetail(@PathVariable UUID id) {
+        TenantResponse response = tenantService.getTenantDetail(id);
+        return ResponseUtil.success("Get tenant detail successfully", response);
+    }
+
+    @PutMapping("/{id}")
+    @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
+    public ResponseEntity<?> updateTenant(@PathVariable UUID id, @Valid @RequestBody UpdateTenantRequest request) {
+        TenantResponse response = tenantService.updateTenant(id, request);
+        return ResponseUtil.success("Update tenant successfully", response);
+    }
+
+    @DeleteMapping("/{id}")
+    @RequireRoles(RoleConstant.SUPER_ADMIN)
+    public ResponseEntity<?> deleteTenant(@PathVariable UUID id) {
+        tenantService.deleteTenant(id);
+        return ResponseUtil.success("Delete tenant successfully", null);
     }
 }

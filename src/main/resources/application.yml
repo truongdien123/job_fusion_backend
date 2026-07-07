@@ -40,7 +40,7 @@ jwt:
 
 open:
   api:
-    serverUrl: http://localhost:8080
+    serverUrl: ${SERVER_URL}
 
 app:
   admin:
