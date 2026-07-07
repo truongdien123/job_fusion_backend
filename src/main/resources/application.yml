@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://${PGSQL_SERVICE_HOST}:${PGSQL_SERVICE_PORT}/job_fusion_db
-    username: postgres
-    password: ${postgres-password}
+    username: ${POSTGRES_USERNAME}
+    password: ${POSTGRES_PASSWORD}
     driverClassName: org.postgresql.Driver
   jpa:
     hibernate:
