@@ -15,12 +15,12 @@ import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.models.UserToken;
 import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.models.UserRole;
-import com.tma.job_fusion_backend.models.RoleTenant;
 import com.tma.job_fusion_backend.repositories.UserRepository;
 import com.tma.job_fusion_backend.repositories.UserTokenRepository;
 import com.tma.job_fusion_backend.repositories.UserRoleRepository;
-import com.tma.job_fusion_backend.repositories.RoleTenantRepository;
 import java.util.Optional;
+
+import com.tma.job_fusion_backend.repositories.query.UserTokenQueryRepository;
 import com.tma.job_fusion_backend.services.AuthService;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.utils.JwtUtil;
@@ -53,7 +53,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserTokenRepository userTokenRepository;
     private final EmailService emailService;
     private final UserRoleRepository userRoleRepository;
-    private final RoleTenantRepository roleTenantRepository;
+    private final UserTokenQueryRepository userTokenQueryRepository;
 
     @Override
     @Transactional
@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = checkUserByEmail(request.getEmail());
 
-        userTokenRepository.invalidateOldToken(user, TokenType.RESET_PASSWORD, DateTimeUtil.nowUtc());
+        userTokenQueryRepository.invalidateOldToken(user, TokenType.RESET_PASSWORD, DateTimeUtil.nowUtc());
 
         SecureRandom secureRandom = new SecureRandom();
         String otp = String.valueOf(100000 + secureRandom.nextInt(900000));
@@ -113,7 +113,7 @@ public class AuthServiceImpl implements AuthService {
     public void resetPassword(ResetPasswordRequest request) {
         User user = checkUserByEmail(request.getEmail());
 
-        UserToken userToken = userTokenRepository
+        UserToken userToken = userTokenQueryRepository
                 .findByUserAndTokenTypeAndUsedAndExpiredAtAfter(
                         user,
                         TokenType.RESET_PASSWORD,
@@ -138,7 +138,7 @@ public class AuthServiceImpl implements AuthService {
     public void checkOTP(VerifyOtpRequest request) {
         User user = checkUserByEmail(request.getEmail());
 
-        UserToken userToken = userTokenRepository
+        UserToken userToken = userTokenQueryRepository
                 .findByUserAndTokenTypeAndUsedAndExpiredAtAfter(
                         user,
                         TokenType.RESET_PASSWORD,
@@ -174,7 +174,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (ObjectUtils.isNotEmpty(user.getDeletedAt())) {
-            throw new UserNotFoundException(ErrorCode.USER_NOT_FOUND);
+            throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
         }
 
         String resolvedRole = resolveUserRole(user);
@@ -238,41 +238,32 @@ public class AuthServiceImpl implements AuthService {
         Optional<UserRole> userRoleOpt = userRoleRepository.findByUser(user);
         if (userRoleOpt.isPresent()) {
             UserRole userRole = userRoleOpt.get();
-            if (ObjectUtils.isNotEmpty(userRole.getRolePlatform())) {
-                return userRole.getRolePlatform().getName().equalsIgnoreCase("Super Admin")
-                        ? RoleConstant.SUPER_ADMIN
-                        : userRole.getRolePlatform().getName();
-            } else if (ObjectUtils.isNotEmpty(userRole.getRoleTemplate())) {
-                switch (userRole.getRoleTemplate().getName()) {
-                    case "Tenant Admin":
-                        return RoleConstant.TENANT_ADMIN;
-                    case "HR":
-                        return RoleConstant.HR;
-                    case "Interviewer":
-                        return RoleConstant.INTERVIEWER;
+            if (ObjectUtils.isNotEmpty(userRole.getRole())) {
+                String roleName = userRole.getRole().getName();
+                if (RoleConstant.SUPER_ADMIN.equalsIgnoreCase(roleName)) {
+                    return RoleConstant.SUPER_ADMIN;
+                }
+                if (RoleConstant.TENANT_ADMIN.equalsIgnoreCase(roleName)) {
+                    return RoleConstant.TENANT_ADMIN;
+                }
+                if (RoleConstant.HR.equalsIgnoreCase(roleName)) {
+                    return RoleConstant.HR;
+                }
+                if (RoleConstant.INTERVIEWER.equalsIgnoreCase(roleName)) {
+                    return RoleConstant.INTERVIEWER;
                 }
             }
         }
-        Optional<RoleTenant> roleTenantOpt = roleTenantRepository.findByUser(user);
-        if (roleTenantOpt.isPresent()) {
-            RoleTenant roleTenant = roleTenantOpt.get();
-            if (StringUtils.isNotEmpty(roleTenant.getName())) {
-                return roleTenant.getName();
-            } else if (ObjectUtils.isNotEmpty(roleTenant.getRoleTemplate())) {
-                return roleTenant.getRoleTemplate().getName();
-            }
-        }
-
         return null;
     }
 
     private User checkUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
     }
 
     private User checkUserById(UUID id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
     }
 }

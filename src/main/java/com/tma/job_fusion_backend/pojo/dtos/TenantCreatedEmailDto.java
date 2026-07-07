@@ -1,0 +1,17 @@
+package com.tma.job_fusion_backend.pojo.dtos;
+
+import lombok.*;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class TenantCreatedEmailDto {
+    private String toEmail;
+    private String adminName;
+    private String tenantName;
+    private String loginUrl;
+    private String dashboardImageUrl;
+    private String adminPassword;
+}

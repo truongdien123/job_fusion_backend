@@ -1,23 +1,23 @@
-package com.tma.job_fusion_backend.repositories.impl;
+package com.tma.job_fusion_backend.repositories.query;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.models.QUserToken;
 import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.models.UserToken;
-import com.tma.job_fusion_backend.repositories.customs.UserTokenRepositoryCustom;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+@Repository
 @RequiredArgsConstructor
-public class UserTokenRepositoryImpl implements UserTokenRepositoryCustom {
+public class UserTokenQueryRepository {
 
     private final JPAQueryFactory queryFactory;
 
-    @Override
     @Transactional(readOnly = true)
     public Optional<UserToken> findByUserAndTokenTypeAndUsedAndExpiredAtAfter(
             User user, TokenType tokenType, boolean isUsed, LocalDateTime now) {
@@ -33,7 +33,6 @@ public class UserTokenRepositoryImpl implements UserTokenRepositoryCustom {
         return Optional.ofNullable(result);
     }
 
-    @Override
     @Transactional
     public void invalidateOldToken(User user, TokenType tokenType, LocalDateTime now) {
         QUserToken qUserToken = QUserToken.userToken;

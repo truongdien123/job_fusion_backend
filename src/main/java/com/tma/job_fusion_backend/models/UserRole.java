@@ -16,11 +16,7 @@ public class UserRole extends BaseEntity {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_template_id")
-    private RoleTemplate roleTemplate;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_platform_id")
-    private RolePlatform rolePlatform;
+    @JoinColumn(name = "role_id")
+    private Role role;
 
 }

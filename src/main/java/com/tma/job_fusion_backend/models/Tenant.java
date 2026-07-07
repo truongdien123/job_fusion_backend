@@ -20,12 +20,9 @@ public class Tenant extends BaseEntity {
     private String industry;
 
     @Column(name = "company_size")
-    private String companySize;
+    private Integer companySize;
 
     private String region;
-
-    @Column(unique = true, name = "company_code")
-    private String companyCode;
 
     @Enumerated(EnumType.STRING)
     private TenantStatus status;
