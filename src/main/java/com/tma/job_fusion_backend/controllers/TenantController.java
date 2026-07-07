@@ -61,6 +61,6 @@ public class TenantController {
     @RequireRoles(RoleConstant.SUPER_ADMIN)
     public ResponseEntity<?> deleteTenant(@PathVariable UUID id) {
         tenantService.deleteTenant(id);
-        return ResponseUtil.success("Delete tenant successfully", null);
+        return ResponseUtil.success("Delete tenant successfully", Boolean.TRUE);
     }
 }
