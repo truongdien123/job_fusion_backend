@@ -9,6 +9,8 @@ import com.tma.job_fusion_backend.models.*;
 import com.tma.job_fusion_backend.pojo.requests.CreateTenantRequest;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
 import com.tma.job_fusion_backend.repositories.*;
+import com.tma.job_fusion_backend.repositories.query.TenantQueryRepository;
+import com.tma.job_fusion_backend.repositories.query.UserRoleQueryRepository;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.services.TenantService;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
@@ -49,6 +51,8 @@ public class TenantServiceImpl implements TenantService {
     private final EmailService emailService;
     private final JwtUtil jwtUtil;
     private final TenantMapper tenantMapper;
+    private final TenantQueryRepository tenantQueryRepository;
+    private final UserRoleQueryRepository userRoleQueryRepository;
 
     @Override
     @Transactional
@@ -58,11 +62,10 @@ public class TenantServiceImpl implements TenantService {
         }
 
         Plan plan = planRepository.findById(request.getPlanId())
-                .orElseThrow(() -> new PlanNotFoundException(ErrorCode.PLAN_NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
 
         Tenant tenant = tenantMapper.toEntity(request);
         tenant.setStatus(TenantStatus.ACTIVE);
-        tenant.setCompanySize(plan.getMaxStaffAccount());
         tenant.setPlan(plan);
         tenant.setCreatedBy(jwtUtil.getCurrentUserId());
 
@@ -82,8 +85,8 @@ public class TenantServiceImpl implements TenantService {
 
         User savedAdminUser = userRepository.save(adminUser);
 
-        Role tenantAdminRole = roleRepository.findByName("Tenant Admin")
-                .orElseThrow(() -> new RoleNotFoundException(ErrorCode.ROLE_NOT_FOUND));
+        Role tenantAdminRole = roleRepository.findByName(RoleConstant.TENANT_ADMIN)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.ROLE_NOT_FOUND));
 
         UserRole userRole = new UserRole();
         userRole.setUser(savedAdminUser);
@@ -108,17 +111,17 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional(readOnly = true)
     public Page<TenantResponse> getListTenant(Pageable pageable) {
-        return tenantRepository.findAllActiveTenants(pageable);
+        return tenantQueryRepository.findAllActiveTenants(pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     public TenantResponse getTenantDetail(UUID id) {
         Tenant tenant = tenantRepository.findById(id)
-                .orElseThrow(() -> new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
 
         if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
-            throw new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND);
+            throw new NotFoundException(ErrorCode.TENANT_NOT_FOUND);
         }
 
         UUID adminUserId = getAdminUserId(tenant.getId());
@@ -130,10 +133,10 @@ public class TenantServiceImpl implements TenantService {
     @Transactional
     public TenantResponse updateTenant(UUID id, UpdateTenantRequest request) {
         Tenant tenant = tenantRepository.findById(id)
-                .orElseThrow(() -> new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
 
         if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
-            throw new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND);
+            throw new NotFoundException(ErrorCode.TENANT_NOT_FOUND);
         }
 
         UserPrincipal currentUser = jwtUtil.getCurrentUser();
@@ -156,7 +159,7 @@ public class TenantServiceImpl implements TenantService {
 
         if (ObjectUtils.isNotEmpty(request.getPlanId()) && (ObjectUtils.isEmpty(tenant.getPlan()) || !request.getPlanId().equals(tenant.getPlan().getId()))) {
             Plan plan = planRepository.findById(request.getPlanId())
-                    .orElseThrow(() -> new PlanNotFoundException(ErrorCode.PLAN_NOT_FOUND));
+                    .orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
             tenant.setPlan(plan);
         }
 
@@ -181,10 +184,10 @@ public class TenantServiceImpl implements TenantService {
     @Transactional
     public void deleteTenant(UUID id) {
         Tenant tenant = tenantRepository.findById(id)
-                .orElseThrow(() -> new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND));
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
 
         if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
-            throw new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND);
+            throw new NotFoundException(ErrorCode.TENANT_NOT_FOUND);
         }
 
         UserPrincipal currentUser = jwtUtil.getCurrentUser();
@@ -206,7 +209,7 @@ public class TenantServiceImpl implements TenantService {
     }
 
     private UUID getAdminUserId(UUID tenantId) {
-        return userRoleRepository.findTenantAdminByTenantId(tenantId)
+        return userRoleQueryRepository.findTenantAdminByTenantId(tenantId)
                 .map(User::getId)
                 .orElse(null);
     }
