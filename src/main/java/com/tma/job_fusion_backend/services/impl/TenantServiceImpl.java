@@ -62,7 +62,7 @@ public class TenantServiceImpl implements TenantService {
 
         Tenant tenant = tenantMapper.toEntity(request);
         tenant.setStatus(TenantStatus.ACTIVE);
-        tenant.setCompanySize(plan.getMaxStaffAccount().toString());
+        tenant.setCompanySize(plan.getMaxStaffAccount());
         tenant.setPlan(plan);
         tenant.setCreatedBy(jwtUtil.getCurrentUserId());
 
@@ -121,9 +121,7 @@ public class TenantServiceImpl implements TenantService {
             throw new TenantNotFoundException(ErrorCode.TENANT_NOT_FOUND);
         }
 
-        UUID adminUserId = userRoleRepository.findTenantAdminByTenantId(tenant.getId())
-                .map(User::getId)
-                .orElse(null);
+        UUID adminUserId = getAdminUserId(tenant.getId());
 
         return tenantMapper.toTenantResponse(tenant, adminUserId);
     }
@@ -169,15 +167,12 @@ public class TenantServiceImpl implements TenantService {
         tenant.setCompanyName(request.getCompanyName());
         tenant.setDomain(request.getDomain());
         tenant.setIndustry(request.getIndustry());
-        tenant.setCompanySize(request.getCompanySize());
         tenant.setRegion(request.getRegion());
         tenant.setUpdatedBy(currentUser.getId());
 
         Tenant savedTenant = tenantRepository.save(tenant);
 
-        UUID adminUserId = userRoleRepository.findTenantAdminByTenantId(savedTenant.getId())
-                .map(User::getId)
-                .orElse(null);
+        UUID adminUserId = getAdminUserId(savedTenant.getId());
 
         return tenantMapper.toTenantResponse(savedTenant, adminUserId);
     }
@@ -208,5 +203,11 @@ public class TenantServiceImpl implements TenantService {
             user.setUpdatedBy(currentUserId);
         }
         userRepository.saveAll(tenantUsers);
+    }
+
+    private UUID getAdminUserId(UUID tenantId) {
+        return userRoleRepository.findTenantAdminByTenantId(tenantId)
+                .map(User::getId)
+                .orElse(null);
     }
 }

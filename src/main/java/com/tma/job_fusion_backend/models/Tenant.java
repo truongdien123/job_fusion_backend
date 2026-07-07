@@ -20,7 +20,7 @@ public class Tenant extends BaseEntity {
     private String industry;
 
     @Column(name = "company_size")
-    private String companySize;
+    private Integer companySize;
 
     private String region;
 

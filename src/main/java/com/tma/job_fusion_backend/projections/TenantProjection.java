@@ -8,7 +8,7 @@ public interface TenantProjection {
     String getCompanyName();
     String getDomain();
     String getIndustry();
-    String getCompanySize();
+    Integer getCompanySize();
     String getRegion();
     TenantStatus getStatus();
     UUID getPlanId();

@@ -20,7 +20,7 @@ public class TenantResponse {
     private String industry;
 
     @JsonProperty("company_size")
-    private String companySize;
+    private Integer companySize;
     private String region;
     private TenantStatus status;
 

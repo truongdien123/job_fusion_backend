@@ -22,9 +22,6 @@ public class UpdateTenantRequest {
 
     private String industry;
 
-    @JsonProperty("company_size")
-    private String companySize;
-
     private String region;
 
     private TenantStatus status;
