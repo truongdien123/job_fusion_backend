@@ -1,0 +1,607 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' 
+      xmlns:w='urn:schemas-microsoft-com:office:word' 
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Tai lieu API</title>
+<style>
+body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333333; }
+h1 { color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; font-size: 24px; margin-top: 40px; }
+h2 { color: #2563eb; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; font-size: 20px; margin-top: 30px; }
+h3 { color: #0d9488; font-size: 16px; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-size: 14px; }
+th { background-color: #f1f5f9; font-weight: bold; color: #0f172a; }
+tr:nth-child(even) { background-color: #f8fafc; }
+pre { background-color: #1e293b; color: #f8fafc; padding: 15px; border: 1px solid #cbd5e1; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; margin: 10px 0; }
+code { font-family: 'Consolas', 'Courier New', monospace; background-color: #f1f5f9; color: #b91c1c; padding: 2px 4px; font-size: 13px; }
+.metadata { background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 10px 15px; margin: 15px 0; }
+</style>
+</head>
+<body>
+
+<h1>TÀI LIỆU API HỆ THỐNG (AUTHENTICATION, TENANT & PLAN)</h1>
+<p>Tài liệu này cung cấp chi tiết đặc tả các API thuộc các module <strong>Authentication (Xác thực)</strong>, <strong>Tenant (Đa thuê)</strong> và <strong>Plan (Gói dịch vụ)</strong> dành cho QA/Tester.</p>
+
+<hr>
+
+<h2>1. Thông tin chung (Overview)</h2>
+<ul>
+  <li><strong>Base URL</strong>: <code>http://localhost:8080</code> (hoặc domain môi trường staging)</li>
+  <li><strong>Cấu trúc Authorization Header</strong> (Cho các API yêu cầu xác thực):
+    <pre>Authorization: Bearer &lt;your_jwt_token&gt;</pre>
+  </li>
+  <li><strong>Các phân quyền trong hệ thống (Roles)</strong>:
+    <ul>
+      <li><code>SUPER_ADMIN</code>: Toàn quyền quản trị hệ thống (Tạo Tenant, cấu hình Plan, xem mọi Tenant).</li>
+      <li><code>TENANT_ADMIN</code>: Admin của một công ty/Tenant riêng (Chỉ quản lý nội bộ Tenant đó).</li>
+      <li><code>STAFF</code>: Nhân viên thuộc một Tenant.</li>
+      <li><code>CANDIDATE</code>: Ứng viên (Người dùng cá nhân tìm việc).</li>
+    </ul>
+  </li>
+</ul>
+
+<hr>
+
+<h2>2. Module 1: Authentication (Xác thực)</h2>
+<p>Các API xác thực nằm dưới path: <code>/api/auth</code></p>
+
+<h3>2.1. Đăng ký tài khoản (Sign Up)</h3>
+<p>Đăng ký tài khoản mới cho ứng viên (CANDIDATE).</p>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/auth/signup</code></li>
+  <li><strong>Phân quyền bắt buộc</strong>: Không (Public)</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Trường</th>
+      <th>Kiểu dữ liệu</th>
+      <th>Bắt buộc</th>
+      <th>Mô tả</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>email</code></td>
+      <td>String</td>
+      <td>Đúng</td>
+      <td>Định dạng email hợp lệ, không trùng lặp.</td>
+    </tr>
+    <tr>
+      <td><code>password</code></td>
+      <td>String</td>
+      <td>Đúng</td>
+      <td>Độ dài tối thiểu 8 ký tự.</td>
+    </tr>
+    <tr>
+      <td><code>full_name</code></td>
+      <td>String</td>
+      <td>Đúng</td>
+      <td>Họ và tên.</td>
+    </tr>
+    <tr>
+      <td><code>phone</code></td>
+      <td>String</td>
+      <td>Sai</td>
+      <td>Số điện thoại.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "email": "candidate@example.com",
+  "password": "Password123",
+  "full_name": "Nguyen Van Candidate",
+  "phone": "0987654321"
+}</pre>
+
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Sign up successful",
+  "data": {
+    "id": "1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5d6",
+    "email": "candidate@example.com",
+    "full_name": "Nguyen Van Candidate",
+    "phone": "0987654321",
+    "status": "ACTIVE",
+    "type": "CANDIDATE",
+    "user_role": "Candidate",
+    "tenant_id": null
+  }
+}</pre>
+
+<h3>2.2. Đăng nhập (Sign In)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/auth/signin</code></li>
+  <li><strong>Phân quyền bắt buộc</strong>: Không (Public)</li>
+</ul>
+
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "email": "candidate@example.com",
+  "password": "Password123"
+}</pre>
+
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Sign in successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "d8e3fa52-cbb3-47cb-b461-12c8b7f83b1d",
+    "user": {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-e1f2a3b4c5d6",
+      "email": "candidate@example.com",
+      "full_name": "Nguyen Van Candidate",
+      "type": "CANDIDATE",
+      "user_role": "Candidate",
+      "tenant_id": null
+    }
+  }
+}</pre>
+
+<h3>2.3. Quên mật khẩu - Gửi OTP (Forgot Password)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/auth/forgot-password</code></li>
+</ul>
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "email": "candidate@example.com"
+}</pre>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "OTP sent to your email successfully",
+  "data": null
+}</pre>
+
+<h3>2.4. Xác minh OTP (Check OTP)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/auth/check-otp</code></li>
+</ul>
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "email": "candidate@example.com",
+  "otp": "123456"
+}</pre>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Verify otp successfully",
+  "data": null
+}</pre>
+
+<h3>2.5. Đặt lại mật khẩu mới (Reset Password)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/auth/reset-password</code></li>
+</ul>
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "email": "candidate@example.com",
+  "otp": "123456",
+  "new_password": "NewPassword123"
+}</pre>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Password reset successfully",
+  "data": null
+}</pre>
+
+<h3>2.6. Làm mới Token (Refresh Token)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/auth/refresh-token</code></li>
+</ul>
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "refresh_token": "d8e3fa52-cbb3-47cb-b461-12c8b7f83b1d"
+}</pre>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Refresh token successful",
+  "data": {
+    "token": "new_access_token_string...",
+    "refresh_token": "new_refresh_token_string...",
+    "user": { ... }
+  }
+}</pre>
+
+<h3>2.7. Đăng xuất (Logout)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/auth/logout</code></li>
+</ul>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Logout successful",
+  "data": null
+}</pre>
+
+<h3>2.8. Đổi mật khẩu (Change Password)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/auth/change-password</code></li>
+</ul>
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "old_password": "Password123",
+  "new_password": "NewPassword123"
+}</pre>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Password changed successfully",
+  "data": null
+}</pre>
+
+<hr>
+
+<h2>3. Module 2: Tenant (Đa thuê)</h2>
+<p>Các API quản lý thông tin các công ty/Tenant. Path: <code>/api/tenant</code></p>
+
+<h3>3.1. Tạo mới Tenant (Create Tenant)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/tenant</code></li>
+  <li><strong>Phân quyền</strong>: <code>SUPER_ADMIN</code></li>
+</ul>
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "company_name": "TMA Solutions",
+  "domain": "tmasolutions.com",
+  "plan_id": "8f88cd1a-967b-4022-bb79-bb7d17462c4a",
+  "admin_email": "tenant_admin@tmasolutions.com",
+  "admin_full_name": "Nguyen Van A"
+}</pre>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Create tenant successfully",
+  "data": {
+    "id": "2f22b7d5-d01c-43df-810f-d42eeadbe42a",
+    "company_name": "TMA Solutions",
+    "domain": "tmasolutions.com",
+    "status": "ACTIVE",
+    "plan_id": "8f88cd1a-967b-4022-bb79-bb7d17462c4a",
+    "admin_user_id": "c7cf87d9-c09a-4c28-98e3-ea06f9d3b10b"
+  }
+}</pre>
+
+<h3>3.2. Lấy danh sách Tenant (Get List Tenant with Pagination)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/tenant/list</code></li>
+  <li><strong>Phân quyền</strong>: <code>SUPER_ADMIN</code></li>
+</ul>
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "page": 1,
+  "size": 10,
+  "sort_field": "companyName",
+  "sort_by": "ASC"
+}</pre>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Get tenants successfully",
+  "data": {
+    "content": [
+      {
+        "id": "2f22b7d5-d01c-43df-810f-d42eeadbe42a",
+        "company_name": "TMA Solutions",
+        "domain": "tmasolutions.com",
+        "status": "ACTIVE",
+        "plan_id": "8f88cd1a-967b-4022-bb79-bb7d17462c4a",
+        "admin_user_id": "c7cf87d9-c09a-4c28-98e3-ea06f9d3b10b"
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "total_elements": 1,
+    "total_pages": 1,
+    "last": true
+  }
+}</pre>
+
+<h3>3.3. Chi tiết Tenant (Get Tenant Detail)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>GET</code></li>
+  <li><strong>URL Path</strong>: <code>/api/tenant/{id}</code></li>
+  <li><strong>Phân quyền</strong>: <code>SUPER_ADMIN</code>, <code>TENANT_ADMIN</code></li>
+</ul>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Get tenant detail successfully",
+  "data": {
+    "id": "2f22b7d5-d01c-43df-810f-d42eeadbe42a",
+    "company_name": "TMA Solutions",
+    "domain": "tmasolutions.com",
+    "status": "ACTIVE",
+    "plan_id": "8f88cd1a-967b-4022-bb79-bb7d17462c4a",
+    "admin_user_id": "c7cf87d9-c09a-4c28-98e3-ea06f9d3b10b"
+  }
+}</pre>
+
+<h3>3.4. Cập nhật Tenant (Update Tenant)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>PUT</code></li>
+  <li><strong>URL Path</strong>: <code>/api/tenant/{id}</code></li>
+  <li><strong>Phân quyền</strong>: <code>SUPER_ADMIN</code>, <code>TENANT_ADMIN</code></li>
+</ul>
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "company_name": "TMA Solutions Group",
+  "domain": "tmagroup.vn",
+  "industry": "Software Engineering",
+  "company_size": 5000,
+  "region": "Vietnam",
+  "status": "ACTIVE",
+  "plan_id": "8f88cd1a-967b-4022-bb79-bb7d17462c4a"
+}</pre>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Update tenant successfully",
+  "data": {
+    "id": "2f22b7d5-d01c-43df-810f-d42eeadbe42a",
+    "company_name": "TMA Solutions Group",
+    "domain": "tmagroup.vn",
+    "status": "ACTIVE",
+    "plan_id": "8f88cd1a-967b-4022-bb79-bb7d17462c4a",
+    "admin_user_id": "c7cf87d9-c09a-4c28-98e3-ea06f9d3b10b"
+  }
+}</pre>
+
+<h3>3.5. Xóa Tenant (Delete Tenant)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>DELETE</code></li>
+  <li><strong>URL Path</strong>: <code>/api/tenant/{id}</code></li>
+  <li><strong>Phân quyền</strong>: <code>SUPER_ADMIN</code></li>
+</ul>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Delete tenant successfully",
+  "data": null
+}</pre>
+
+<hr>
+
+<h2>4. Module 3: Plan (Gói dịch vụ)</h2>
+<p>Các API cấu hình gói dịch vụ hệ thống. Path: <code>/api/plan</code></p>
+
+<h3>4.1. Tạo mới Plan (Create Plan)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/plan</code></li>
+  <li><strong>Phân quyền bắt buộc</strong>: <code>SUPER_ADMIN</code></li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Trường</th>
+      <th>Kiểu dữ liệu</th>
+      <th>Bắt buộc</th>
+      <th>Mô tả / Điều kiện</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td>String</td>
+      <td>Đúng</td>
+      <td>Không được trống, tối đa 255 ký tự.</td>
+    </tr>
+    <tr>
+      <td><code>description</code></td>
+      <td>String</td>
+      <td>Sai</td>
+      <td>Mô tả chi tiết, tối đa 1000 ký tự.</td>
+    </tr>
+    <tr>
+      <td><code>monthly_price</code></td>
+      <td>Double</td>
+      <td>Đúng</td>
+      <td>Giá hàng tháng, phải >= 0.0.</td>
+    </tr>
+    <tr>
+      <td><code>max_staff_account</code></td>
+      <td>Integer</td>
+      <td>Sai</td>
+      <td>Số tài khoản nhân viên tối đa được tạo.</td>
+    </tr>
+    <tr>
+      <td><code>staff_account_unlimited</code></td>
+      <td>Boolean</td>
+      <td>Đúng</td>
+      <td>Trạng thái không giới hạn tài khoản nhân viên.</td>
+    </tr>
+    <tr>
+      <td><code>max_active_job_posting</code></td>
+      <td>Integer</td>
+      <td>Sai</td>
+      <td>Số tin tuyển dụng hoạt động tối đa được đăng.</td>
+    </tr>
+    <tr>
+      <td><code>active_job_posting_unlimited</code></td>
+      <td>Boolean</td>
+      <td>Đúng</td>
+      <td>Trạng thái không giới hạn tin tuyển dụng.</td>
+    </tr>
+    <tr>
+      <td><code>features</code></td>
+      <td>Array</td>
+      <td>Sai</td>
+      <td>Danh sách tính năng (Mỗi object gồm <code>key</code> và <code>status</code>).</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "name": "Enterprise Plan",
+  "description": "Dành cho các doanh nghiệp quy mô lớn",
+  "monthly_price": 199.0,
+  "max_staff_account": 0,
+  "staff_account_unlimited": true,
+  "max_active_job_posting": 100,
+  "active_job_posting_unlimited": false,
+  "features": [
+    {
+      "key": "CV_MATCHING",
+      "status": "ACTIVE"
+    },
+    {
+      "key": "AI_RECOMMENDATION",
+      "status": "ACTIVE"
+    }
+  ]
+}</pre>
+
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Create plan successfully",
+  "data": {
+    "id": "8f88cd1a-967b-4022-bb79-bb7d17462c4a",
+    "name": "Enterprise Plan",
+    "description": "Dành cho các doanh nghiệp quy mô lớn",
+    "monthly_price": 199.0,
+    "max_staff_account": 0,
+    "staff_account_unlimited": true,
+    "max_active_job_posting": 100,
+    "active_job_posting_unlimited": false,
+    "features": [
+      {
+        "key": "CV_MATCHING",
+        "status": "ACTIVE"
+      },
+      {
+        "key": "AI_RECOMMENDATION",
+        "status": "ACTIVE"
+      }
+    ],
+    "created_at": "2026-07-07T10:00:00",
+    "updated_at": null
+  }
+}</pre>
+
+<h3>4.2. Lấy danh sách Plan phân trang (Get List Plan)</h3>
+<ul>
+  <li><strong>HTTP Method</strong>: <code>POST</code></li>
+  <li><strong>URL Path</strong>: <code>/api/plan/list</code></li>
+  <li><strong>Phân quyền bắt buộc</strong>: <code>SUPER_ADMIN</code></li>
+</ul>
+<p><em>Ví dụ Request Body:</em></p>
+<pre>{
+  "page": 1,
+  "size": 10,
+  "sort_field": "name",
+  "sort_by": "ASC"
+}</pre>
+<p><em>Ví dụ Response thành công (HTTP 200 OK):</em></p>
+<pre>{
+  "success": true,
+  "message": "Get plans successfully",
+  "data": {
+    "content": [
+      {
+        "id": "8f88cd1a-967b-4022-bb79-bb7d17462c4a",
+        "name": "Enterprise Plan",
+        "description": "Dành cho các doanh nghiệp quy mô lớn",
+        "monthly_price": 199.0,
+        "max_staff_account": 0,
+        "staff_account_unlimited": true,
+        "max_active_job_posting": 100,
+        "active_job_posting_unlimited": false,
+        "features": [...]
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "total_elements": 1,
+    "total_pages": 1,
+    "last": true
+  }
+}</pre>
+
+<hr>
+
+<h2>5. Một số Case Test gợi ý chung cho Module Authen & Plan</h2>
+<table>
+  <thead>
+    <tr>
+      <th>STT</th>
+      <th>Tên API</th>
+      <th>Mô tả Test Case</th>
+      <th>Kết quả mong đợi</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>Sign Up</td>
+      <td>Đăng ký với Email đã tồn tại trong DB</td>
+      <td>Trả về lỗi 400 Bad Request kèm message báo trùng lặp Email.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Sign In</td>
+      <td>Đăng nhập với mật khẩu sai</td>
+      <td>Trả về 400 Bad Request hoặc 401 Unauthorized kèm message tương ứng.</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Forgot Password</td>
+      <td>Gửi yêu cầu OTP đến một email chưa đăng ký tài khoản</td>
+      <td>Trả về 404 Not Found báo người dùng không tồn tại.</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Check OTP</td>
+      <td>Gửi đúng mã OTP và chưa quá thời gian hết hạn</td>
+      <td>Trả về 200 OK thành công.</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Check OTP</td>
+      <td>Gửi mã OTP đã quá hạn sử dụng (ví dụ quá 5 phút)</td>
+      <td>Trả về lỗi hết hạn (BAD_REQUEST).</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Change Password</td>
+      <td>Thay đổi mật khẩu khi nhập mật khẩu cũ không chính xác</td>
+      <td>Báo lỗi không trùng khớp mật khẩu cũ.</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Create Plan</td>
+      <td>Tạo gói Plan với monthlyPrice là số âm (ví dụ: -10.0)</td>
+      <td>Trả về lỗi 400 Validation failed: monthly price must be &gt;= 0.</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>Get List Plan</td>
+      <td>Kiểm tra phân trang và lọc gói Plan</td>
+      <td>Trả về danh sách plan chính xác theo page và size gửi đi.</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>
