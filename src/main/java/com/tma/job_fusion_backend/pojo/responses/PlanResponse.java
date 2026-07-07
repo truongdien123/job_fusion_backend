@@ -1,6 +1,5 @@
 package com.tma.job_fusion_backend.pojo.responses;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tma.job_fusion_backend.pojo.dtos.FeatureDto;
 import lombok.*;
 

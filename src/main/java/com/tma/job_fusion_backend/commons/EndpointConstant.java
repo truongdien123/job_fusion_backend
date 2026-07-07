@@ -14,4 +14,5 @@ public final class EndpointConstant {
     public static final String ENDPOINT_LOGOUT = "/logout";
     public static final String ENDPOINT_CHANGE_PASSWORD = "/change-password";
     public static final String ENDPOINT_TENANT = "/api/tenant";
+    public static final String ENDPOINT_ID = "/{id}";
 }

@@ -1,6 +1,5 @@
 package com.tma.job_fusion_backend.pojo.requests;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tma.job_fusion_backend.commons.FieldConstant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,11 +15,8 @@ import org.springframework.util.StringUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PagingRequest<T> {
-
     private String sortField;
-
     private T filters;
-
     private Sort.Direction sortBy;
     private int page;
     private int size;

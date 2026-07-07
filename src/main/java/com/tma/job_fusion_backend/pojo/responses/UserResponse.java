@@ -1,6 +1,5 @@
 package com.tma.job_fusion_backend.pojo.responses;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tma.job_fusion_backend.enums.UserStatus;
 import com.tma.job_fusion_backend.enums.UserType;
 import lombok.*;
@@ -16,25 +15,16 @@ import java.util.UUID;
 public class UserResponse {
     private UUID id;
     private String email;
-
     private String fullName;
-
     private String phone;
     private String headline;
     private String address;
-
     private LocalDateTime dateOfBirth;
-
     private String avatar;
-
     private String employeeCode;
-
     private String jobTitle;
-
     private UserStatus status;
     private UserType type;
-
     private String userRole;
-
     private UUID tenantId;
 }

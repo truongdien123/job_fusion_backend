@@ -4,6 +4,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.models.QTenant;
 import com.tma.job_fusion_backend.models.QUserRole;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
@@ -32,7 +33,7 @@ public class TenantQueryRepository {
         JPQLQuery<UUID> adminUserIdSubquery = JPAExpressions.select(qUserRole.user.id)
                 .from(qUserRole)
                 .where(qUserRole.user.tenant.id.eq(qTenant.id)
-                        .and(qUserRole.role.name.eq("Tenant Admin"))
+                        .and(qUserRole.role.name.eq(RoleConstant.TENANT_ADMIN))
                         .and(qUserRole.deletedAt.isNull())
                         .and(qUserRole.user.deletedAt.isNull()));
 

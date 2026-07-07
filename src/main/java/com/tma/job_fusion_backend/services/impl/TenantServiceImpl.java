@@ -16,6 +16,7 @@ import com.tma.job_fusion_backend.services.TenantService;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.JwtUtil;
 import com.tma.job_fusion_backend.utils.PasswordUtil;
+import com.tma.job_fusion_backend.utils.ValidationUtil;
 import com.tma.job_fusion_backend.mappers.TenantMapper;
 import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +54,7 @@ public class TenantServiceImpl implements TenantService {
     private final TenantMapper tenantMapper;
     private final TenantQueryRepository tenantQueryRepository;
     private final UserRoleQueryRepository userRoleQueryRepository;
+    private final ValidationUtil validationUtil;
 
     @Override
     @Transactional
@@ -117,12 +119,9 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional(readOnly = true)
     public TenantResponse getTenantDetail(UUID id) {
-        Tenant tenant = tenantRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
+        Tenant tenant = findTenantById(id);
 
-        if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
-            throw new NotFoundException(ErrorCode.TENANT_NOT_FOUND);
-        }
+        checkExistingTenant(tenant);
 
         UUID adminUserId = getAdminUserId(tenant.getId());
 
@@ -132,17 +131,11 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public TenantResponse updateTenant(UUID id, UpdateTenantRequest request) {
-        Tenant tenant = tenantRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
+        Tenant tenant = findTenantById(id);
 
-        if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
-            throw new NotFoundException(ErrorCode.TENANT_NOT_FOUND);
-        }
+        checkExistingTenant(tenant);
 
-        UserPrincipal currentUser = jwtUtil.getCurrentUser();
-        if (ObjectUtils.isEmpty(currentUser)) {
-            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-        }
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
 
         boolean isSuperAdmin = RoleConstant.SUPER_ADMIN.equalsIgnoreCase(currentUser.getRole());
         if (!isSuperAdmin) {
@@ -157,11 +150,7 @@ public class TenantServiceImpl implements TenantService {
             }
         }
 
-        if (ObjectUtils.isNotEmpty(request.getPlanId()) && (ObjectUtils.isEmpty(tenant.getPlan()) || !request.getPlanId().equals(tenant.getPlan().getId()))) {
-            Plan plan = planRepository.findById(request.getPlanId())
-                    .orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
-            tenant.setPlan(plan);
-        }
+        validationUtil.validateAndSetPlan(tenant, request.getPlanId());
 
         if (ObjectUtils.isNotEmpty(request.getStatus())) {
             tenant.setStatus(request.getStatus());
@@ -183,12 +172,9 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public void deleteTenant(UUID id) {
-        Tenant tenant = tenantRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
+        Tenant tenant = findTenantById(id);
 
-        if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
-            throw new NotFoundException(ErrorCode.TENANT_NOT_FOUND);
-        }
+        checkExistingTenant(tenant);
 
         UserPrincipal currentUser = jwtUtil.getCurrentUser();
         UUID currentUserId = ObjectUtils.isNotEmpty(currentUser) ? currentUser.getId() : null;
@@ -212,5 +198,16 @@ public class TenantServiceImpl implements TenantService {
         return userRoleQueryRepository.findTenantAdminByTenantId(tenantId)
                 .map(User::getId)
                 .orElse(null);
+    }
+
+    private Tenant findTenantById(UUID id) {
+        return tenantRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
+    }
+
+    private void checkExistingTenant(Tenant tenant) {
+        if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
+            throw new NotFoundException(ErrorCode.TENANT_NOT_FOUND);
+        }
     }
 }

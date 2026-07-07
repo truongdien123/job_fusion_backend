@@ -1,6 +1,5 @@
 package com.tma.job_fusion_backend.pojo.requests;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tma.job_fusion_backend.enums.TenantStatus;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

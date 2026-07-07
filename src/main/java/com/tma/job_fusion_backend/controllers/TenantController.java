@@ -43,21 +43,21 @@ public class TenantController {
         return ResponseUtil.success("Get tenants successfully", PageResponse.of(listTenant));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(EndpointConstant.ENDPOINT_ID)
     @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
     public ResponseEntity<?> getTenantDetail(@PathVariable UUID id) {
         TenantResponse response = tenantService.getTenantDetail(id);
         return ResponseUtil.success("Get tenant detail successfully", response);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(EndpointConstant.ENDPOINT_ID)
     @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
     public ResponseEntity<?> updateTenant(@PathVariable UUID id, @Valid @RequestBody UpdateTenantRequest request) {
         TenantResponse response = tenantService.updateTenant(id, request);
         return ResponseUtil.success("Update tenant successfully", response);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping(EndpointConstant.ENDPOINT_ID)
     @RequireRoles(RoleConstant.SUPER_ADMIN)
     public ResponseEntity<?> deleteTenant(@PathVariable UUID id) {
         tenantService.deleteTenant(id);
