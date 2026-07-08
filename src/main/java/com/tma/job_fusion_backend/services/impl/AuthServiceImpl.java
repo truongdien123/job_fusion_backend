@@ -170,7 +170,7 @@ public class AuthServiceImpl implements AuthService {
 
     private AuthResponse handleUserToResponse(User user) {
         if (UserStatus.ACTIVE != user.getStatus()) {
-            throw new UserNotActiveException(ErrorCode.INACTIVE_USER);
+            throw new NotActiveException(ErrorCode.INACTIVE_USER);
         }
 
         if (ObjectUtils.isNotEmpty(user.getDeletedAt())) {

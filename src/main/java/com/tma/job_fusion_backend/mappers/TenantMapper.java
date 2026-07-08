@@ -2,9 +2,9 @@ package com.tma.job_fusion_backend.mappers;
 
 import com.tma.job_fusion_backend.models.Tenant;
 import com.tma.job_fusion_backend.pojo.requests.CreateTenantRequest;
+import com.tma.job_fusion_backend.pojo.requests.UpdateTenantRequest;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.mapstruct.*;
 
 import java.util.UUID;
 
@@ -25,4 +25,11 @@ public interface TenantMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "plan", ignore = true)
     Tenant toEntity(CreateTenantRequest request);
+
+    @BeanMapping(
+            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
+    )
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "plan", ignore = true)
+    void updateTenant(UpdateTenantRequest request, @MappingTarget Tenant tenant);
 }
