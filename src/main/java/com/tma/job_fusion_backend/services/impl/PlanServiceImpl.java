@@ -33,10 +33,12 @@ public class PlanServiceImpl implements PlanService {
     @Override
     @Transactional
     public PlanResponse createPlan(CreatePlanRequest request) {
-        if ((!request.getActiveJobPostingUnlimited() && ObjectUtils.isEmpty(request.getMaxActiveJobPosting())) || (request.getActiveJobPostingUnlimited() && ObjectUtils.isNotEmpty(request.getMaxActiveJobPosting()))) {
+        if ((!request.getActiveJobPostingUnlimited() && ObjectUtils.isEmpty(request.getMaxActiveJobPosting()))
+                || (request.getActiveJobPostingUnlimited() && ObjectUtils.isNotEmpty(request.getMaxActiveJobPosting()))) {
             throw new InvalidPlanException(ErrorCode.INVALID_JOB_POSTING);
         }
-        if ((!request.getStaffAccountUnlimited() && ObjectUtils.isEmpty(request.getMaxStaffAccount())) || (request.getStaffAccountUnlimited() && ObjectUtils.isNotEmpty(request.getMaxStaffAccount()))) {
+        if ((!request.getStaffAccountUnlimited() && ObjectUtils.isEmpty(request.getMaxStaffAccount()))
+                || (request.getStaffAccountUnlimited() && ObjectUtils.isNotEmpty(request.getMaxStaffAccount()))) {
             throw new InvalidPlanException(ErrorCode.INVALID_STAFF_ACCOUNT);
         }
         Plan plan = planMapper.toEntity(request);

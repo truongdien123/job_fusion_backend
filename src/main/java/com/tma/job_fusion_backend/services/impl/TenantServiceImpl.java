@@ -156,10 +156,7 @@ public class TenantServiceImpl implements TenantService {
             tenant.setStatus(request.getStatus());
         }
 
-        tenant.setCompanyName(request.getCompanyName());
-        tenant.setDomain(request.getDomain());
-        tenant.setIndustry(request.getIndustry());
-        tenant.setRegion(request.getRegion());
+        tenantMapper.updateTenant(request, tenant);
         tenant.setUpdatedBy(currentUser.getId());
 
         Tenant savedTenant = tenantRepository.save(tenant);
