@@ -1,38 +1,46 @@
 package com.tma.job_fusion_backend.services.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tma.job_fusion_backend.enums.EmailStatus;
 import com.tma.job_fusion_backend.models.EmailLog;
 import com.tma.job_fusion_backend.repositories.EmailLogRepository;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
-import jakarta.mail.internet.MimeMessage;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.time.LocalDateTime;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 
 @Service
 @Log4j2
 public class EmailServiceImpl implements EmailService {
 
-    @Value("${spring.mail.username}")
-    private String from;
+    @Value("${sendgrid.api-key}")
+    private String apiKey;
 
-    private final JavaMailSender mailSender;
+    @Value("${sendgrid.from-email}")
+    private String fromEmail;
+
     private final EmailLogRepository emailLogRepository;
     private final TemplateEngine templateEngine;
+    private final ObjectMapper objectMapper;
+    private final HttpClient httpClient;
 
-    public EmailServiceImpl(JavaMailSender mailSender, EmailLogRepository emailLogRepository, TemplateEngine templateEngine) {
-        this.mailSender = mailSender;
+    public EmailServiceImpl(EmailLogRepository emailLogRepository, TemplateEngine templateEngine) {
         this.emailLogRepository = emailLogRepository;
         this.templateEngine = templateEngine;
+        this.objectMapper = new ObjectMapper();
+        this.httpClient = HttpClient.newHttpClient();
     }
 
 
@@ -81,27 +89,50 @@ public class EmailServiceImpl implements EmailService {
         emailLog.setBody(htmlBody);
         emailLog.setSentAt(DateTimeUtil.nowUtc());
 
-        if (mailSender != null) {
-            try {
-                MimeMessage mimeMessage = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-                helper.setFrom("Job Fusion <" + from + ">");
-                helper.setTo(toEmail);
-                helper.setSubject(subject);
-                helper.setText(htmlBody, true);
+        try {
+            ObjectNode payload = objectMapper.createObjectNode();
+            
+            ArrayNode personalizations = objectMapper.createArrayNode();
+            ObjectNode personalization = objectMapper.createObjectNode();
+            ArrayNode toArray = objectMapper.createArrayNode();
+            toArray.add(objectMapper.createObjectNode().put("email", toEmail));
+            personalization.set("to", toArray);
+            personalizations.add(personalization);
+            payload.set("personalizations", personalizations);
 
-                mailSender.send(mimeMessage);
+            payload.set("from", objectMapper.createObjectNode()
+                    .put("email", fromEmail)
+                    .put("name", "Job Fusion"));
+            
+            payload.put("subject", subject);
 
+            ArrayNode contentArray = objectMapper.createArrayNode();
+            contentArray.add(objectMapper.createObjectNode()
+                    .put("type", "text/html")
+                    .put("value", htmlBody));
+            payload.set("content", contentArray);
+
+            String requestBody = objectMapper.writeValueAsString(payload);
+
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.sendgrid.com/v3/mail/send"))
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 emailLog.setStatus(EmailStatus.SENT);
-                log.info("Sent Tenant Created HTML email to {} successfully.", toEmail);
-            } catch (Exception e) {
+                log.info("Sent {} HTML email to {} successfully via SendGrid API.", emailType, toEmail);
+            } else {
                 emailLog.setStatus(EmailStatus.FAILED);
-                log.error("Failed to send Tenant Created HTML email to {}: {}", toEmail, e.getMessage());
+                log.error("Failed to send email via SendGrid API. Status: {}, Response: {}", response.statusCode(), response.body());
             }
-        } else {
-            log.warn("[NO SMTP CONFIG] Simulated {} HTML email to {} (HTML logged in database). {}",
-                    emailType, toEmail, simulatedSuffix);
+        } catch (Exception e) {
             emailLog.setStatus(EmailStatus.FAILED);
+            log.error("Exception occurred while sending email to {}: {}", toEmail, e.getMessage());
         }
 
         emailLogRepository.save(emailLog);
