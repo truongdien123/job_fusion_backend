@@ -3,6 +3,7 @@ package com.tma.job_fusion_backend.pojo.requests;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -18,7 +19,10 @@ public class SignUpRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 8, message = "Password must be at least 8 characters")
+    @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,}$",
+        message = "Password must be at least 8 characters long, containing at least one uppercase letter, one lowercase letter, one number, and one special character"
+    )
     private String password;
 
     @NotBlank(message = "Full name is required")
