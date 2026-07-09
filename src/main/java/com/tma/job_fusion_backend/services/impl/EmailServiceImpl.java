@@ -44,7 +44,7 @@ public class EmailServiceImpl implements EmailService {
         Context context = new Context();
         context.setVariable("otp", otp);
         sendHtmlEmail(toEmail,
-                "Reset Password OTP",
+                subject,
                 "otp-email",
                 context,
                 "OTP",
@@ -64,7 +64,7 @@ public class EmailServiceImpl implements EmailService {
         context.setVariable("adminEmail", dto.getToEmail());
         context.setVariable("adminPassword", dto.getAdminPassword());
         sendHtmlEmail(dto.getToEmail(),
-                "Your new Tenant workspace is ready",
+                subject,
                 "tenant-created-email",
                 context,
                 "Tenant Created",
