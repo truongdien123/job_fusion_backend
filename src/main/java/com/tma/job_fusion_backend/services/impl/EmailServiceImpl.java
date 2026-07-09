@@ -73,7 +73,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private void sendHtmlEmail(String toEmail, String subject, String templateName, Context context, String emailType, String simulatedSuffix) {
-        String htmlBody = templateEngine.process("tenant-created-email", context);
+        String htmlBody = templateEngine.process(templateName, context);
 
         EmailLog emailLog = new EmailLog();
         emailLog.setRecipient(toEmail);
