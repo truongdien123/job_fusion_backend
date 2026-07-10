@@ -3,7 +3,7 @@ package com.tma.job_fusion_backend.controllers;
 import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
-import com.tma.job_fusion_backend.pojo.requests.CreatePlanRequest;
+import com.tma.job_fusion_backend.pojo.requests.PlanRequest;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import com.tma.job_fusion_backend.pojo.responses.PlanResponse;
@@ -17,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_PLAN)
 @RequiredArgsConstructor
@@ -27,7 +29,7 @@ public class PlanController {
 
     @PostMapping
     @RequireRoles(RoleConstant.SUPER_ADMIN)
-    public ResponseEntity<?> createPlan(@Valid @RequestBody CreatePlanRequest request) {
+    public ResponseEntity<?> createPlan(@Valid @RequestBody PlanRequest request) {
         PlanResponse response = planService.createPlan(request);
         return ResponseUtil.success("Create plan successfully", response);
     }
@@ -38,5 +40,19 @@ public class PlanController {
         Pageable pageable = request.toPageable();
         Page<PlanResponse> listPlan = planService.getListPlan(pageable);
         return ResponseUtil.success("Get plans successfully", PageResponse.of(listPlan));
+    }
+
+    @GetMapping(EndpointConstant.ENDPOINT_ID)
+    @RequireRoles(RoleConstant.SUPER_ADMIN)
+    public ResponseEntity<?> getPlanDetail(@PathVariable UUID id) {
+        PlanResponse response = planService.getPlanDetail(id);
+        return ResponseUtil.success("Get plan detail successfully", response);
+    }
+
+    @PutMapping(EndpointConstant.ENDPOINT_ID)
+    @RequireRoles(RoleConstant.SUPER_ADMIN)
+    public ResponseEntity<?> updatePlan(@PathVariable UUID id, @Valid @RequestBody PlanRequest request) {
+        PlanResponse response = planService.updatePlan(id, request);
+        return ResponseUtil.success("Update plan successfully", response);
     }
 }

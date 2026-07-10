@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreatePlanRequest {
+public class PlanRequest {
 
     @NotBlank(message = "Plan name is required")
     @Size(max = 255, message = "Plan name must not exceed 255 characters")
