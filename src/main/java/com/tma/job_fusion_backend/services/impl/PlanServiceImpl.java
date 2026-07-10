@@ -5,9 +5,7 @@ import com.tma.job_fusion_backend.exceptions.InvalidPlanException;
 import com.tma.job_fusion_backend.exceptions.NotFoundException;
 import com.tma.job_fusion_backend.mappers.PlanMapper;
 import com.tma.job_fusion_backend.models.Plan;
-import com.tma.job_fusion_backend.pojo.requests.CreatePlanRequest;
 import com.tma.job_fusion_backend.pojo.requests.PlanRequest;
-import com.tma.job_fusion_backend.pojo.requests.UpdatePlanRequest;
 import com.tma.job_fusion_backend.pojo.responses.PlanResponse;
 import com.tma.job_fusion_backend.repositories.PlanRepository;
 import com.tma.job_fusion_backend.services.PlanService;
@@ -32,7 +30,7 @@ public class PlanServiceImpl implements PlanService {
 
     @Override
     @Transactional
-    public PlanResponse createPlan(CreatePlanRequest request) {
+    public PlanResponse createPlan(PlanRequest request) {
         validatePlan(request);
         Plan plan = planMapper.toEntity(request);
 
@@ -58,11 +56,11 @@ public class PlanServiceImpl implements PlanService {
 
     @Override
     @Transactional
-    public PlanResponse updatePlan(UUID id, UpdatePlanRequest request) {
+    public PlanResponse updatePlan(UUID id, PlanRequest request) {
         Plan plan = findPlanById(id);
         validatePlan(request);
 
-        planMapper.updatePlan(request, plan);
+        plan = planMapper.toEntity(request);
 
         plan.setUpdatedBy(jwtUtil.getCurrentUserId());
 
