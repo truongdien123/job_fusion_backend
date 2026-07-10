@@ -7,6 +7,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.models.QTenant;
 import com.tma.job_fusion_backend.models.QUserRole;
+import com.tma.job_fusion_backend.models.Tenant;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -46,7 +47,8 @@ public class TenantQueryRepository {
                         qTenant.region,
                         qTenant.status,
                         qTenant.plan.id,
-                        adminUserIdSubquery
+                        adminUserIdSubquery,
+                        qTenant.createdAt
                 ))
                 .from(qTenant)
                 .where(qTenant.deletedAt.isNull())
@@ -62,5 +64,15 @@ public class TenantQueryRepository {
         long totalCount = Optional.ofNullable(total).orElse(0L);
 
         return new PageImpl<>(content, pageable, totalCount);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Tenant> findTenantWithDeletedAtIsNull(UUID id) {
+        QTenant qTenant = QTenant.tenant;
+        Tenant tenant = queryFactory.select(qTenant)
+                .from(qTenant)
+                .where(qTenant.id.eq(id).and(qTenant.deletedAt.isNull()))
+                .fetchOne();
+        return Optional.ofNullable(tenant);
     }
 }
