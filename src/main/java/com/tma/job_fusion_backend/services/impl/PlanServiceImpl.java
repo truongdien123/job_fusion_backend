@@ -42,53 +42,30 @@ public class PlanServiceImpl implements PlanService {
 
         planRepository.save(plan);
 
-        PlanResponse response = planMapper.toPlanResponse(plan);
-        response.setFeatures(JsonUtil.convertJsonToFeatures(plan.getFeature()));
-
-        return response;
+        return buildResponse(plan);
     }
 
     @Override
     public Page<PlanResponse> getListPlan(Pageable pageable) {
-        return planRepository.findAll(pageable).map(plan -> {
-            PlanResponse response = planMapper.toPlanResponse(plan);
-            response.setFeatures(JsonUtil.convertJsonToFeatures(plan.getFeature()));
-            return response;
-        });
+        return planRepository.findAll(pageable).map(this::buildResponse);
     }
 
     @Override
     public PlanResponse getPlanDetail(UUID id) {
         Plan plan = findPlanById(id);
-        checkingPlan(plan);
-        PlanResponse planResponse = planMapper.toPlanResponse(plan);
-        planResponse.setFeatures(JsonUtil.convertJsonToFeatures(plan.getFeature()));
-        return planResponse;
+        return buildResponse(plan);
     }
 
     @Override
     @Transactional
     public PlanResponse updatePlan(UUID id, UpdatePlanRequest request) {
         Plan plan = findPlanById(id);
-        checkingPlan(plan);
         validatePlan(request);
 
         planMapper.updatePlan(request, plan);
 
-        if (ObjectUtils.isNotEmpty(request.getActiveJobPostingUnlimited())) {
-            if (Boolean.TRUE.equals(request.getActiveJobPostingUnlimited())) {
-                plan.setMaxActiveJobPosting(null);
-            } else {
-                plan.setMaxActiveJobPosting(request.getMaxActiveJobPosting());
-            }
-        }
-        if (ObjectUtils.isNotEmpty(request.getStaffAccountUnlimited())) {
-            if (Boolean.TRUE.equals(request.getStaffAccountUnlimited())) {
-                plan.setMaxStaffAccount(null);
-            } else {
-                plan.setMaxStaffAccount(request.getMaxStaffAccount());
-            }
-        }
+        plan.setMaxActiveJobPosting(Boolean.FALSE.equals(request.getActiveJobPostingUnlimited()) ? request.getMaxActiveJobPosting() : null);
+        plan.setMaxStaffAccount(Boolean.FALSE.equals(request.getStaffAccountUnlimited()) ? request.getMaxStaffAccount() : null);
 
         plan.setUpdatedBy(jwtUtil.getCurrentUserId());
 
@@ -96,20 +73,11 @@ public class PlanServiceImpl implements PlanService {
 
         planRepository.save(plan);
 
-        PlanResponse response = planMapper.toPlanResponse(plan);
-        response.setFeatures(JsonUtil.convertJsonToFeatures(plan.getFeature()));
-
-        return response;
+        return buildResponse(plan);
     }
 
     private Plan findPlanById(UUID id) {
-        return planRepository.findById(id).orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
-    }
-
-    private void checkingPlan(Plan plan) {
-        if (ObjectUtils.isNotEmpty(plan.getDeletedAt())) {
-            throw new NotFoundException(ErrorCode.PLAN_NOT_FOUND);
-        }
+        return planRepository.findByIdAndDeletedAtIsNull(id).orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
     }
 
     private void convertJson(Plan plan, PlanRequest request) {
@@ -133,5 +101,11 @@ public class PlanServiceImpl implements PlanService {
                 throw new InvalidPlanException(ErrorCode.INVALID_STAFF_ACCOUNT);
             }
         }
+    }
+
+    private PlanResponse buildResponse(Plan plan) {
+        PlanResponse response = planMapper.toPlanResponse(plan);
+        response.setFeatures(JsonUtil.convertJsonToFeatures(plan.getFeature()));
+        return response;
     }
 }
