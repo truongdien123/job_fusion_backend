@@ -20,6 +20,10 @@ public class TenantResponse {
     private String region;
     private TenantStatus status;
     private UUID planId;
+    private String planName;
+    private Long activeUsers;
+    private Integer maxUsers;
     private UUID adminUserId;
+    private LocalDateTime expirationDate;
     private LocalDateTime createdAt;
 }

@@ -4,6 +4,8 @@ import com.tma.job_fusion_backend.enums.TenantStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "tenants")
 @Getter
@@ -30,5 +32,8 @@ public class Tenant extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id")
     private Plan plan;
+
+    @Column(name = "expiration_date")
+    private LocalDateTime expirationDate;
 
 }

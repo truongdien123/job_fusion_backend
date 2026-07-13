@@ -6,6 +6,7 @@ import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.models.QTenant;
+import com.tma.job_fusion_backend.models.QUser;
 import com.tma.job_fusion_backend.models.QUserRole;
 import com.tma.job_fusion_backend.models.Tenant;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
@@ -30,6 +31,7 @@ public class TenantQueryRepository {
     public Page<TenantResponse> findAllActiveTenants(Pageable pageable) {
         QTenant qTenant = QTenant.tenant;
         QUserRole qUserRole = QUserRole.userRole;
+        QUser qUser = QUser.user;
 
         JPQLQuery<UUID> adminUserIdSubquery = JPAExpressions.select(qUserRole.user.id)
                 .from(qUserRole)
@@ -37,6 +39,11 @@ public class TenantQueryRepository {
                         .and(qUserRole.role.name.eq(RoleConstant.TENANT_ADMIN))
                         .and(qUserRole.deletedAt.isNull())
                         .and(qUserRole.user.deletedAt.isNull()));
+
+        JPQLQuery<Long> activeUsersSubquery = JPAExpressions.select(qUser.count())
+                .from(qUser)
+                .where(qUser.tenant.id.eq(qTenant.id)
+                        .and(qUser.deletedAt.isNull()));
 
         List<TenantResponse> content = queryFactory.select(Projections.constructor(TenantResponse.class,
                         qTenant.id,
@@ -47,7 +54,11 @@ public class TenantQueryRepository {
                         qTenant.region,
                         qTenant.status,
                         qTenant.plan.id,
+                        qTenant.plan.name,
+                        activeUsersSubquery,
+                        qTenant.plan.maxStaffAccount,
                         adminUserIdSubquery,
+                        qTenant.expirationDate,
                         qTenant.createdAt
                 ))
                 .from(qTenant)

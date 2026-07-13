@@ -15,10 +15,6 @@ public class InterviewFeedback extends BaseEntity {
     @JoinColumn(name = "interview_schedule_id")
     private InterviewSchedule interviewSchedule;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "interviewer_id")
-    private User interviewer;
-
     private Double score;
 
     private String strengths;
