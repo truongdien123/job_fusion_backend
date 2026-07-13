@@ -60,7 +60,7 @@ public class PlanServiceImpl implements PlanService {
         Plan plan = findPlanById(id);
         validatePlan(request);
 
-        plan = planMapper.toEntity(request);
+        planMapper.updatePlan(request, plan);
 
         plan.setUpdatedBy(jwtUtil.getCurrentUserId());
 
