@@ -12,9 +12,12 @@ import java.util.UUID;
 public interface TenantMapper {
 
     @Mapping(target = "planId", source = "tenant.plan.id")
+    @Mapping(target = "planName", source = "tenant.plan.name")
+    @Mapping(target = "maxUsers", source = "tenant.plan.maxStaffAccount")
     @Mapping(target = "adminUserId", source = "adminUserId")
     @Mapping(target = "id", source = "tenant.id")
-    TenantResponse toTenantResponse(Tenant tenant, UUID adminUserId);
+    @Mapping(target = "activeUsers", source = "activeUsers")
+    TenantResponse toTenantResponse(Tenant tenant, UUID adminUserId, Long activeUsers);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

@@ -70,6 +70,8 @@ public class TenantServiceImpl implements TenantService {
         tenant.setStatus(TenantStatus.ACTIVE);
         tenant.setPlan(plan);
         tenant.setCreatedBy(jwtUtil.getCurrentUserId());
+        tenant.setExpirationDate(DateTimeUtil.nowUtc().plusMonths(1));
+        tenant.setCompanySize(1);
 
         Tenant savedTenant = tenantRepository.save(tenant);
 
@@ -107,7 +109,7 @@ public class TenantServiceImpl implements TenantService {
                         .build()
         );
 
-        return tenantMapper.toTenantResponse(savedTenant, savedAdminUser.getId());
+        return tenantMapper.toTenantResponse(savedTenant, savedAdminUser.getId(), 1L);
     }
 
     @Override
@@ -125,7 +127,8 @@ public class TenantServiceImpl implements TenantService {
 
         UUID adminUserId = getAdminUserId(tenant.getId());
 
-        return tenantMapper.toTenantResponse(tenant, adminUserId);
+        long activeUsers = userRepository.countByTenantIdAndDeletedAtIsNull(tenant.getId());
+        return tenantMapper.toTenantResponse(tenant, adminUserId, activeUsers);
     }
 
     @Override
@@ -163,7 +166,8 @@ public class TenantServiceImpl implements TenantService {
 
         UUID adminUserId = getAdminUserId(savedTenant.getId());
 
-        return tenantMapper.toTenantResponse(savedTenant, adminUserId);
+        long activeUsers = userRepository.countByTenantIdAndDeletedAtIsNull(savedTenant.getId());
+        return tenantMapper.toTenantResponse(savedTenant, adminUserId, activeUsers);
     }
 
     @Override
