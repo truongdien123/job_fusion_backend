@@ -19,8 +19,8 @@ public class ChangePasswordRequest {
     @NotBlank(message = "New password is required")
     @Size(max = 20, message = "New password must be at most 20 characters long")
     @Pattern(
-        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,20}$",
-        message = "New password must be between 8 and 20 characters long, containing at least one uppercase letter, one lowercase letter, one number, and one special character"
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9])\\S{8,20}$",
+        message = "New password must be between 8 and 20 characters long, containing at least one uppercase letter, one lowercase letter, one number, and one special character, and must not contain spaces"
     )
     private String newPassword;
 }
