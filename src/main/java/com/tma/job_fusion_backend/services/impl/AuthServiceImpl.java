@@ -59,7 +59,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public UserResponse signUp(SignUpRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         User user = userMapper.toEntity(request);
@@ -120,10 +120,10 @@ public class AuthServiceImpl implements AuthService {
                         false,
                         DateTimeUtil.nowUtc()
                 )
-                .orElseThrow(() -> new InvalidTokenException(ErrorCode.INVALID_TOKEN));
+                .orElseThrow(() -> new BadRequestException(ErrorCode.INVALID_TOKEN));
 
         if (!passwordEncoder.matches(request.getOtp(), userToken.getToken())) {
-            throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
+            throw new BadRequestException(ErrorCode.INVALID_TOKEN);
         }
 
         userToken.setUsed(true);
@@ -145,9 +145,9 @@ public class AuthServiceImpl implements AuthService {
                         false,
                         DateTimeUtil.nowUtc()
                 )
-                .orElseThrow(() -> new InvalidTokenException(ErrorCode.EXPIRED_OTP));
+                .orElseThrow(() -> new BadRequestException(ErrorCode.EXPIRED_OTP));
         if (!passwordEncoder.matches(request.getOtp(), userToken.getToken())) {
-            throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
+            throw new BadRequestException(ErrorCode.INVALID_TOKEN);
         }
     }
 
@@ -160,7 +160,7 @@ public class AuthServiceImpl implements AuthService {
             decodedJWT = jwtUtil.validateToken(request.getRefreshToken());
              userId = jwtUtil.getIdFromToken(decodedJWT);
         } catch (Exception e) {
-            throw new InvalidTokenException(ErrorCode.INVALID_TOKEN);
+            throw new BadRequestException(ErrorCode.INVALID_TOKEN);
         }
 
         User user = checkUserById(userId);
@@ -221,7 +221,7 @@ public class AuthServiceImpl implements AuthService {
         User user = checkUserById(principal.getId());
 
         if (request.getOldPassword().equals(request.getNewPassword())) {
-            throw new InvalidPasswordException(ErrorCode.DUPLICATE_PASSWORD);
+            throw new BadRequestException(ErrorCode.DUPLICATE_PASSWORD);
         }
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new InvalidCredentialsException(ErrorCode.INVALID_PASSWORD);

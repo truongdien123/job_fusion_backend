@@ -60,7 +60,7 @@ public class TenantServiceImpl implements TenantService {
     @Transactional
     public TenantResponse createTenant(CreateTenantRequest request) {
         if (userRepository.existsByEmail(request.getAdminEmail())) {
-            throw new EmailAlreadyExistsException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         Plan plan = planRepository.findById(request.getPlanId())
