@@ -1,7 +1,7 @@
 package com.tma.job_fusion_backend.services.impl;
 
 import com.tma.job_fusion_backend.commons.ErrorCode;
-import com.tma.job_fusion_backend.exceptions.InvalidPlanException;
+import com.tma.job_fusion_backend.exceptions.BadRequestException;
 import com.tma.job_fusion_backend.exceptions.NotFoundException;
 import com.tma.job_fusion_backend.mappers.PlanMapper;
 import com.tma.job_fusion_backend.models.Plan;
@@ -32,6 +32,9 @@ public class PlanServiceImpl implements PlanService {
     @Transactional
     public PlanResponse createPlan(PlanRequest request) {
         validatePlan(request);
+        if (planRepository.existsByNameAndDeletedAtIsNull(request.getName())) {
+            throw new BadRequestException(ErrorCode.PLAN_ALREADY_EXISTS);
+        }
         Plan plan = planMapper.toEntity(request);
 
         plan.setCreatedBy(jwtUtil.getCurrentUserId());
@@ -59,6 +62,9 @@ public class PlanServiceImpl implements PlanService {
     public PlanResponse updatePlan(UUID id, PlanRequest request) {
         Plan plan = findPlanById(id);
         validatePlan(request);
+        if (planRepository.existsByNameAndIdNotAndDeletedAtIsNull(request.getName(), id)) {
+            throw new BadRequestException(ErrorCode.PLAN_ALREADY_EXISTS);
+        }
 
         planMapper.updatePlan(request, plan);
 
@@ -89,14 +95,14 @@ public class PlanServiceImpl implements PlanService {
             boolean activeJobPostingUnlimited = Boolean.TRUE.equals(request.getActiveJobPostingUnlimited());
             if ((!activeJobPostingUnlimited && ObjectUtils.isEmpty(request.getMaxActiveJobPosting()))
                     || (activeJobPostingUnlimited && ObjectUtils.isNotEmpty(request.getMaxActiveJobPosting()))) {
-                throw new InvalidPlanException(ErrorCode.INVALID_JOB_POSTING);
+                throw new BadRequestException(ErrorCode.INVALID_JOB_POSTING);
             }
         }
         if (ObjectUtils.isNotEmpty(request.getStaffAccountUnlimited()) || ObjectUtils.isNotEmpty(request.getMaxStaffAccount())) {
             boolean staffAccountUnlimited = Boolean.TRUE.equals(request.getStaffAccountUnlimited());
             if ((!staffAccountUnlimited && ObjectUtils.isEmpty(request.getMaxStaffAccount()))
                     || (staffAccountUnlimited && ObjectUtils.isNotEmpty(request.getMaxStaffAccount()))) {
-                throw new InvalidPlanException(ErrorCode.INVALID_STAFF_ACCOUNT);
+                throw new BadRequestException(ErrorCode.INVALID_STAFF_ACCOUNT);
             }
         }
     }

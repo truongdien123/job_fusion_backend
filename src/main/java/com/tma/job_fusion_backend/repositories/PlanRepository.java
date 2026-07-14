@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface PlanRepository extends JpaRepository<Plan, UUID> {
 
     Optional<Plan> findByIdAndDeletedAtIsNull(UUID id);
+    boolean existsByNameAndDeletedAtIsNull(String name);
+    boolean existsByNameAndIdNotAndDeletedAtIsNull(String name, UUID id);
 }
