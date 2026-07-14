@@ -62,6 +62,9 @@ public class PlanServiceImpl implements PlanService {
 
         planMapper.updatePlan(request, plan);
 
+        plan.setMaxStaffAccount(Boolean.TRUE.equals(request.getStaffAccountUnlimited()) ? null : request.getMaxStaffAccount());
+        plan.setMaxActiveJobPosting(Boolean.TRUE.equals(request.getActiveJobPostingUnlimited()) ? null : request.getMaxActiveJobPosting());
+
         plan.setUpdatedBy(jwtUtil.getCurrentUserId());
 
         convertJson(plan, request);

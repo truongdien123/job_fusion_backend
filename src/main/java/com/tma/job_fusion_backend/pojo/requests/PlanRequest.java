@@ -1,5 +1,6 @@
 package com.tma.job_fusion_backend.pojo.requests;
 
+import com.tma.job_fusion_backend.enums.PlanStatus;
 import com.tma.job_fusion_backend.pojo.dtos.FeatureDto;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -34,6 +35,8 @@ public class PlanRequest {
 
     @NotNull(message = "Active job posting unlimited flag is required")
     private Boolean activeJobPostingUnlimited;
+
+    private PlanStatus status;
 
     private List<FeatureDto> features;
 }
