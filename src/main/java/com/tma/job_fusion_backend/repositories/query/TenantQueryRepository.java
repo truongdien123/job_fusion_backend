@@ -123,14 +123,11 @@ public class TenantQueryRepository {
             LocalDateTime deletedAt = projection.getDeletedAt();
             Double monthlyPrice = projection.getMonthlyPrice();
 
-            if (ObjectUtils.isNotEmpty(createdAt) && ObjectUtils.isNotEmpty(monthlyPrice)) {
-                LocalDateTime endDate = ObjectUtils.isNotEmpty(deletedAt) ? deletedAt : now;
+            if (createdAt != null && monthlyPrice != null) {
+                LocalDateTime endDate = deletedAt != null ? deletedAt : now;
 
                 // calculate number of months from when creating tenant to end date
-                long months = ChronoUnit.MONTHS.between(createdAt, endDate) + 1;
-                if (months < 1) {
-                    months = 1;
-                }
+                long months = Math.max(1, ChronoUnit.MONTHS.between(createdAt, endDate) + 1);
                 totalRevenue += months * monthlyPrice;
             }
         }
@@ -141,12 +138,11 @@ public class TenantQueryRepository {
     @Transactional(readOnly = true)
     public Long countActiveTenants() {
         QTenant qTenant = QTenant.tenant;
-        Long count = queryFactory.select(qTenant.count())
+        return queryFactory.select(qTenant.count())
                 .from(qTenant)
                 .where(qTenant.status.eq(TenantStatus.ACTIVE)
                         .and(qTenant.deletedAt.isNull()))
                 .fetchOne();
-        return ObjectUtils.isNotEmpty(count) ? count : 0L;
     }
 
     @Transactional(readOnly = true)
@@ -181,7 +177,7 @@ public class TenantQueryRepository {
         for (TenantUsageProjection projection : results) {
             Long activeUsers = projection.getActiveUsers();
             Integer maxUsers = projection.getMaxUsers();
-            if (ObjectUtils.isNotEmpty(activeUsers) && ObjectUtils.isNotEmpty(maxUsers) && maxUsers > 0) {
+            if (activeUsers != null && maxUsers != null && maxUsers > 0) {
                 totalUsage += (double) activeUsers / maxUsers;
                 validCount++;
             }
@@ -198,19 +194,11 @@ public class TenantQueryRepository {
                 .from(qTenant)
                 .fetchOne();
 
-        if (ObjectUtils.isEmpty(totalTenants) || totalTenants == 0) {
-            return 0.0;
-        }
-
         Long churnedTenants = queryFactory.select(qTenant.count())
                 .from(qTenant)
                 .where(qTenant.status.eq(TenantStatus.INACTIVE)
                         .or(qTenant.deletedAt.isNotNull()))
                 .fetchOne();
-
-        if (ObjectUtils.isEmpty(churnedTenants)) {
-            churnedTenants = 0L;
-        }
 
         return ((double) churnedTenants / totalTenants) * 100.0;
     }
