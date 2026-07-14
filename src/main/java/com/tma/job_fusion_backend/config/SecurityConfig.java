@@ -38,13 +38,13 @@ public class SecurityConfig {
     }
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/auth/signup",
-            "/api/auth/signin",
-            "/api/auth/refresh-token",
-            "/api/auth/logout",
-            "/api/auth/forgot-password",
-            "/api/auth/reset-password",
-            "/api/auth/check-otp",
+            EndpointConstant.ENDPOINT_SIGNUP,
+            EndpointConstant.ENDPOINT_SIGNIN,
+            EndpointConstant.ENDPOINT_REFRESH,
+            EndpointConstant.ENDPOINT_LOGOUT,
+            EndpointConstant.ENDPOINT_FORGOT_PASSWORD,
+            EndpointConstant.ENDPOINT_RESET_PASSWORD,
+            EndpointConstant.ENDPOINT_CHECK_OTP,
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/api-docs",
