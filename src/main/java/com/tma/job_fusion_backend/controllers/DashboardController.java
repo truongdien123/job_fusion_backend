@@ -14,14 +14,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(EndpointConstant.ENDPOINT_BASE+EndpointConstant.ENDPOINT_DASHBOARD)
+@RequestMapping(EndpointConstant.ENDPOINT_DASHBOARD)
 @RequiredArgsConstructor
 @Tag(name = "dashboard")
 public class DashboardController {
 
     private final DashboardService dashboardService;
 
-    @GetMapping(EndpointConstant.ENDPOINT_STATS+EndpointConstant.ENDPOINT_TENANT)
+    @GetMapping(EndpointConstant.ENDPOINT_STATS_TENANT)
     @RequireRoles(RoleConstant.SUPER_ADMIN)
     public ResponseEntity<?> getDashboardStats() {
         DashboardStatsTenantResponse response = dashboardService.getDashboardStatsTenant();

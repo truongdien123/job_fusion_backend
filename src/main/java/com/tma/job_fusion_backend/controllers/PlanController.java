@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(EndpointConstant.ENDPOINT_BASE+EndpointConstant.ENDPOINT_PLAN)
+@RequestMapping(EndpointConstant.ENDPOINT_PLAN)
 @RequiredArgsConstructor
 @Tag(name = "plan")
 public class PlanController {
