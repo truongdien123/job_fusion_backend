@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(EndpointConstant.ENDPOINT_AUTH)
+@RequestMapping(EndpointConstant.ENDPOINT_BASE+EndpointConstant.ENDPOINT_AUTH)
 @RequiredArgsConstructor
 @Tag(name = "authentication")
 public class AuthController {

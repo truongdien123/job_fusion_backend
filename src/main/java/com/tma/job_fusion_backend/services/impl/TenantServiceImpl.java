@@ -123,8 +123,6 @@ public class TenantServiceImpl implements TenantService {
     public TenantResponse getTenantDetail(UUID id) {
         Tenant tenant = findTenantById(id);
 
-        checkExistingTenant(tenant);
-
         UUID adminUserId = getAdminUserId(tenant.getId());
 
         long activeUsers = userRepository.countByTenantIdAndDeletedAtIsNull(tenant.getId());
@@ -135,8 +133,6 @@ public class TenantServiceImpl implements TenantService {
     @Transactional
     public TenantResponse updateTenant(UUID id, UpdateTenantRequest request) {
         Tenant tenant = findTenantById(id);
-
-        checkExistingTenant(tenant);
 
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
 
@@ -175,8 +171,6 @@ public class TenantServiceImpl implements TenantService {
     public void deleteTenant(UUID id) {
         Tenant tenant = findTenantById(id);
 
-        checkExistingTenant(tenant);
-
         UserPrincipal currentUser = jwtUtil.getCurrentUser();
         UUID currentUserId = ObjectUtils.isNotEmpty(currentUser) ? currentUser.getId() : null;
 
@@ -202,13 +196,7 @@ public class TenantServiceImpl implements TenantService {
     }
 
     private Tenant findTenantById(UUID id) {
-        return tenantRepository.findById(id)
+        return tenantQueryRepository.findTenantWithDeletedAtIsNull(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
-    }
-
-    private void checkExistingTenant(Tenant tenant) {
-        if (ObjectUtils.isNotEmpty(tenant.getDeletedAt())) {
-            throw new NotFoundException(ErrorCode.TENANT_NOT_FOUND);
-        }
     }
 }

@@ -1,22 +1,34 @@
 package com.tma.job_fusion_backend.repositories.query;
 
+
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.tma.job_fusion_backend.commons.RoleConstant;
+import com.tma.job_fusion_backend.enums.TenantStatus;
 import com.tma.job_fusion_backend.models.QTenant;
 import com.tma.job_fusion_backend.models.QUser;
 import com.tma.job_fusion_backend.models.QUserRole;
 import com.tma.job_fusion_backend.models.Tenant;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
+import com.tma.job_fusion_backend.projections.TenantRevenueProjection;
+import com.tma.job_fusion_backend.projections.TenantUsageProjection;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -85,5 +97,121 @@ public class TenantQueryRepository {
                 .where(qTenant.id.eq(id).and(qTenant.deletedAt.isNull()))
                 .fetchOne();
         return Optional.ofNullable(tenant);
+    }
+
+
+
+    @Transactional(readOnly = true)
+    public Double calculateTotalRevenue() {
+        QTenant qTenant = QTenant.tenant;
+
+        // get monthly price of each tenant using projection constructor
+        List<TenantRevenueProjection> results = queryFactory.select(Projections.constructor(
+                        TenantRevenueProjection.class,
+                        qTenant.createdAt,
+                        qTenant.deletedAt,
+                        qTenant.plan.monthlyPrice
+                ))
+                .from(qTenant)
+                .fetch();
+
+        double totalRevenue = 0.0;
+        LocalDateTime now = DateTimeUtil.nowUtc();
+
+        for (TenantRevenueProjection projection : results) {
+            LocalDateTime createdAt = projection.getCreatedAt();
+            LocalDateTime deletedAt = projection.getDeletedAt();
+            Double monthlyPrice = projection.getMonthlyPrice();
+
+            if (ObjectUtils.isNotEmpty(createdAt) && ObjectUtils.isNotEmpty(monthlyPrice)) {
+                LocalDateTime endDate = ObjectUtils.isNotEmpty(deletedAt) ? deletedAt : now;
+
+                // calculate number of months from when creating tenant to end date
+                long months = ChronoUnit.MONTHS.between(createdAt, endDate) + 1;
+                if (months < 1) {
+                    months = 1;
+                }
+                totalRevenue += months * monthlyPrice;
+            }
+        }
+
+        return totalRevenue;
+    }
+
+    @Transactional(readOnly = true)
+    public Long countActiveTenants() {
+        QTenant qTenant = QTenant.tenant;
+        Long count = queryFactory.select(qTenant.count())
+                .from(qTenant)
+                .where(qTenant.status.eq(TenantStatus.ACTIVE)
+                        .and(qTenant.deletedAt.isNull()))
+                .fetchOne();
+        return ObjectUtils.isNotEmpty(count) ? count : 0L;
+    }
+
+    @Transactional(readOnly = true)
+    public Double calculateAverageUsage() {
+        QTenant qTenant = QTenant.tenant;
+        QUser qUser = QUser.user;
+
+        // count user by tenant id
+        JPQLQuery<Long> userCountSubquery = JPAExpressions.select(qUser.count())
+                .from(qUser)
+                .where(qUser.tenant.id.eq(qTenant.id)
+                        .and(qUser.deletedAt.isNull()));
+
+        // get active user and max staff of plan
+        List<TenantUsageProjection> results = queryFactory.select(Projections.constructor(
+                        TenantUsageProjection.class,
+                        userCountSubquery,
+                        qTenant.plan.maxStaffAccount
+                ))
+                .from(qTenant)
+                .where(qTenant.status.eq(TenantStatus.ACTIVE)
+                        .and(qTenant.deletedAt.isNull())
+                        .and(qTenant.plan.maxStaffAccount.gt(0)))
+                .fetch();
+
+        if (results.isEmpty()) {
+            return 0.0;
+        }
+
+        double totalUsage = 0.0;
+        int validCount = 0;
+        for (TenantUsageProjection projection : results) {
+            Long activeUsers = projection.getActiveUsers();
+            Integer maxUsers = projection.getMaxUsers();
+            if (ObjectUtils.isNotEmpty(activeUsers) && ObjectUtils.isNotEmpty(maxUsers) && maxUsers > 0) {
+                totalUsage += (double) activeUsers / maxUsers;
+                validCount++;
+            }
+        }
+
+        return validCount > 0 ? (totalUsage / validCount) * 100.0 : 0.0;
+    }
+
+    @Transactional(readOnly = true)
+    public Double calculateChurnRate() {
+        QTenant qTenant = QTenant.tenant;
+
+        Long totalTenants = queryFactory.select(qTenant.count())
+                .from(qTenant)
+                .fetchOne();
+
+        if (ObjectUtils.isEmpty(totalTenants) || totalTenants == 0) {
+            return 0.0;
+        }
+
+        Long churnedTenants = queryFactory.select(qTenant.count())
+                .from(qTenant)
+                .where(qTenant.status.eq(TenantStatus.INACTIVE)
+                        .or(qTenant.deletedAt.isNotNull()))
+                .fetchOne();
+
+        if (ObjectUtils.isEmpty(churnedTenants)) {
+            churnedTenants = 0L;
+        }
+
+        return ((double) churnedTenants / totalTenants) * 100.0;
     }
 }

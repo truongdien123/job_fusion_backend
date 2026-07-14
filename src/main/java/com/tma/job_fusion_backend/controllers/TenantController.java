@@ -21,7 +21,7 @@ import com.tma.job_fusion_backend.pojo.requests.UpdateTenantRequest;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(EndpointConstant.ENDPOINT_TENANT)
+@RequestMapping(EndpointConstant.ENDPOINT_BASE+EndpointConstant.ENDPOINT_TENANT)
 @RequiredArgsConstructor
 @Tag(name = "tenant")
 public class TenantController {
