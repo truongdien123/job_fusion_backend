@@ -1,5 +1,6 @@
 package com.tma.job_fusion_backend.pojo.responses;
 
+import com.tma.job_fusion_backend.enums.PlanStatus;
 import com.tma.job_fusion_backend.pojo.dtos.FeatureDto;
 import lombok.*;
 
@@ -29,6 +30,8 @@ public class PlanResponse {
     private Integer maxActiveJobPosting;
 
     private Boolean activeJobPostingUnlimited;
+
+    private PlanStatus status;
 
     private List<FeatureDto> features;
 
