@@ -30,8 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.tma.job_fusion_backend.pojo.requests.UpdateTenantRequest;
-import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.components.UserPrincipal;
 import org.springframework.security.access.AccessDeniedException;
 import java.time.LocalDateTime;
