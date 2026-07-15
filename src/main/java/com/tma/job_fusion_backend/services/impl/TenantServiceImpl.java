@@ -3,11 +3,12 @@ package com.tma.job_fusion_backend.services.impl;
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.enums.TenantStatus;
+import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.enums.UserStatus;
 import com.tma.job_fusion_backend.enums.UserType;
 import com.tma.job_fusion_backend.exceptions.*;
 import com.tma.job_fusion_backend.models.*;
-import com.tma.job_fusion_backend.pojo.requests.CreateTenantRequest;
+import com.tma.job_fusion_backend.pojo.requests.TenantRequest;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
 import com.tma.job_fusion_backend.repositories.*;
 import com.tma.job_fusion_backend.repositories.query.TenantQueryRepository;
@@ -41,14 +42,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TenantServiceImpl implements TenantService {
 
-    @Value("${app.loginUrl}")
-    private String loginUrl;
+    @Value("${app.activation}")
+    private String activationLink;
 
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
     private final PlanRepository planRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final UserTokenRepository userTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final JwtUtil jwtUtil;
@@ -59,7 +61,7 @@ public class TenantServiceImpl implements TenantService {
 
     @Override
     @Transactional
-    public TenantResponse createTenant(CreateTenantRequest request) {
+    public TenantResponse createTenant(TenantRequest request) {
         if (userRepository.existsByEmail(request.getAdminEmail())) {
             throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
@@ -82,10 +84,9 @@ public class TenantServiceImpl implements TenantService {
         adminUser.setEmail(request.getAdminEmail());
         adminUser.setPassword(passwordEncoder.encode(generatedPassword));
         adminUser.setFullName(request.getAdminFullName());
-        adminUser.setStatus(UserStatus.ACTIVE);
+        adminUser.setStatus(UserStatus.PENDING);
         adminUser.setType(UserType.TENANT);
         adminUser.setTenant(savedTenant);
-        adminUser.setActivatedDate(DateTimeUtil.nowUtc());
         adminUser.setCreatedBy(jwtUtil.getCurrentUserId());
 
         User savedAdminUser = userRepository.save(adminUser);
@@ -99,15 +100,24 @@ public class TenantServiceImpl implements TenantService {
         userRole.setCreatedBy(jwtUtil.getCurrentUserId());
         userRoleRepository.save(userRole);
 
+        String activationTokenStr = UUID.randomUUID().toString();
+        UserToken activationToken = new UserToken();
+        activationToken.setUser(savedAdminUser);
+        activationToken.setToken(activationTokenStr);
+        activationToken.setTokenType(TokenType.ACTIVATION);
+        activationToken.setExpiredAt(DateTimeUtil.nowUtc().plusDays(7));
+        activationToken.setUsed(false);
+        userTokenRepository.save(activationToken);
+
         emailService.sendTenantCreatedEmail(
                 TenantCreatedEmailDto.builder()
                         .toEmail(savedAdminUser.getEmail())
                         .adminName(savedAdminUser.getFullName())
                         .tenantName(savedTenant.getCompanyName())
-                        .loginUrl(loginUrl)
                         .dashboardImageUrl(null)
                         .adminPassword(generatedPassword)
                         .role(RoleConstant.TENANT_ADMIN)
+                        .activationUrl(activationLink)
                         .build()
         );
 
@@ -133,7 +143,7 @@ public class TenantServiceImpl implements TenantService {
 
     @Override
     @Transactional
-    public TenantResponse updateTenant(UUID id, UpdateTenantRequest request) {
+    public TenantResponse updateTenant(UUID id, TenantRequest request) {
         Tenant tenant = findTenantById(id);
 
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();

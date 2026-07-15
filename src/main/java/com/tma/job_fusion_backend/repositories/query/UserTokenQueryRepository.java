@@ -33,6 +33,21 @@ public class UserTokenQueryRepository {
         return Optional.ofNullable(result);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<UserToken> findByTokenAndTokenTypeAndUsedAndExpiredAtAfter(
+            String token, TokenType tokenType, boolean isUsed, LocalDateTime now) {
+        QUserToken qUserToken = QUserToken.userToken;
+
+        UserToken result = queryFactory.selectFrom(qUserToken)
+                .where(qUserToken.token.eq(token)
+                        .and(qUserToken.tokenType.eq(tokenType))
+                        .and(qUserToken.used.eq(isUsed))
+                        .and(qUserToken.expiredAt.gt(now)))
+                .fetchOne();
+
+        return Optional.ofNullable(result);
+    }
+
     @Transactional
     public void invalidateOldToken(User user, TokenType tokenType, LocalDateTime now) {
         QUserToken qUserToken = QUserToken.userToken;

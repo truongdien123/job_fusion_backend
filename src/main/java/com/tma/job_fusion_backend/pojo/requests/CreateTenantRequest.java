@@ -30,4 +30,7 @@ public class CreateTenantRequest {
     @NotBlank(message = "Admin full name is required")
     private String adminFullName;
 
+    @NotBlank(message = "Region is required")
+    private String region;
+
 }

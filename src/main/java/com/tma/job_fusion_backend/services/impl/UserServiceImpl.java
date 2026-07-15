@@ -53,8 +53,8 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
-    @Value("${app.loginUrl}")
-    private String loginUrl;
+    @Value("${app.activation}")
+    private String activationLink;
 
     @Override
     @Transactional(readOnly = true)
@@ -113,7 +113,7 @@ public class UserServiceImpl implements UserService {
                         .toEmail(savedStaff.getEmail())
                         .adminName(savedStaff.getFullName())
                         .tenantName(tenant.getCompanyName())
-                        .loginUrl(loginUrl)
+                        .activationUrl(activationLink)
                         .dashboardImageUrl(null)
                         .adminPassword(password)
                         .role(String.join(", ", request.getRole()))

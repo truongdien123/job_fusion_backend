@@ -5,6 +5,7 @@ import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.components.UserPrincipal;
 import com.tma.job_fusion_backend.exceptions.*;
 import com.tma.job_fusion_backend.pojo.requests.*;
+import com.tma.job_fusion_backend.pojo.responses.ActivationDetailsResponse;
 import com.tma.job_fusion_backend.pojo.responses.AuthResponse;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
 import com.tma.job_fusion_backend.enums.UserStatus;
@@ -20,6 +21,7 @@ import com.tma.job_fusion_backend.repositories.UserRoleRepository;
 import com.tma.job_fusion_backend.repositories.query.UserTokenQueryRepository;
 import com.tma.job_fusion_backend.services.AuthService;
 import com.tma.job_fusion_backend.services.EmailService;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.JwtUtil;
 import com.tma.job_fusion_backend.utils.UserUtil;
 import lombok.RequiredArgsConstructor;
@@ -77,6 +79,10 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        if (UserStatus.ACTIVE != user.getStatus()) {
+            throw new BadRequestException(ErrorCode.INACTIVE_USER);
         }
 
         return handleUserToResponse(user);
@@ -234,5 +240,40 @@ public class AuthServiceImpl implements AuthService {
     private User checkUserById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse activateAccount(ActivationRequest request) {
+        UserToken token = userTokenQueryRepository.findByTokenAndTokenTypeAndUsedAndExpiredAtAfter(
+                request.getToken(), TokenType.ACTIVATION, false, DateTimeUtil.nowUtc()
+        ).orElseThrow(() -> new BadRequestException(ErrorCode.INVALID_TOKEN));
+
+        token.setUsed(true);
+        userTokenRepository.save(token);
+
+        User user = token.getUser();
+        user.setStatus(UserStatus.ACTIVE);
+        user.setActivatedDate(DateTimeUtil.nowUtc());
+        User savedUser = userRepository.save(user);
+
+        return handleUserToResponse(savedUser);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ActivationDetailsResponse getActivationDetails(String tokenStr) {
+        UserToken token = userTokenQueryRepository.findByTokenAndTokenTypeAndUsedAndExpiredAtAfter(
+                tokenStr, TokenType.ACTIVATION, false, DateTimeUtil.nowUtc()
+        ).orElseThrow(() -> new BadRequestException(ErrorCode.INVALID_TOKEN));
+
+        User user = token.getUser();
+        String resolvedRole = UserUtil.resolveUserRole(user, userRoleRepository);
+
+        return ActivationDetailsResponse.builder()
+                .workspaceName(user.getTenant() != null ? user.getTenant().getCompanyName() : null)
+                .role(resolvedRole)
+                .email(user.getEmail())
+                .build();
     }
 }

@@ -45,6 +45,7 @@ public class SecurityConfig {
             EndpointConstant.ENDPOINT_FORGOT_PASSWORD,
             EndpointConstant.ENDPOINT_RESET_PASSWORD,
             EndpointConstant.ENDPOINT_CHECK_OTP,
+            EndpointConstant.ENDPOINT_ACTIVATE,
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/api-docs",

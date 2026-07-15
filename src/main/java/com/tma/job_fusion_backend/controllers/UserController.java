@@ -3,16 +3,18 @@ package com.tma.job_fusion_backend.controllers;
 import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
+import com.tma.job_fusion_backend.commons.validation.OnCreate;
+import com.tma.job_fusion_backend.commons.validation.OnUpdate;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.requests.StaffRequest;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
 import com.tma.job_fusion_backend.services.UserService;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -33,7 +35,7 @@ public class UserController {
 
     @PostMapping(EndpointConstant.ENDPOINT_STAFF_BASE)
     @RequireRoles(RoleConstant.TENANT_ADMIN)
-    public ResponseEntity<?> createStaff(@Valid @RequestBody StaffRequest request) {
+    public ResponseEntity<?> createStaff(@Validated(OnCreate.class) @RequestBody StaffRequest request) {
         UserResponse response = userService.createStaff(request);
         return ResponseUtil.success("Create staff successfully", response);
     }
@@ -47,7 +49,7 @@ public class UserController {
 
     @PutMapping(EndpointConstant.ENDPOINT_STAFF_ID)
     @RequireRoles(RoleConstant.TENANT_ADMIN)
-    public ResponseEntity<?> updateStaff(@PathVariable UUID id, @Valid @RequestBody StaffRequest request) {
+    public ResponseEntity<?> updateStaff(@PathVariable UUID id, @Validated(OnUpdate.class) @RequestBody StaffRequest request) {
         UserResponse response = userService.updateStaff(id, request);
         return ResponseUtil.success("Update staff successfully", response);
     }

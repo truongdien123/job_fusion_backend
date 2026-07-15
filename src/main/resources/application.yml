@@ -34,4 +34,4 @@ app:
     password: ${ADMIN_PLATFORM_PASSWORD}
   otp:
     expire-minutes: 5
-  loginUrl: https://fe-project-2ljo.vercel.app/
+  activation: ${ACTIVATION_LINK}
