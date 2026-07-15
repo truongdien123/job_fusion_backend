@@ -14,4 +14,5 @@ public class TenantCreatedEmailDto {
     private String loginUrl;
     private String dashboardImageUrl;
     private String adminPassword;
+    private String role;
 }

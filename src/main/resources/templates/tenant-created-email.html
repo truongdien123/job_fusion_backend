@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your JobFusion Tenant Workspace is Ready</title>
+    <title th:text="${isTenantAdmin ? 'Your JobFusion Tenant Workspace is Ready' : 'Invitation to join ' + tenantName + ' on JobFusion'}">Your JobFusion Tenant Workspace is Ready</title>
     <style>
         body {
             margin: 0;
@@ -196,7 +196,8 @@
             </div>
             
             <div class="content">
-                <h2 class="title">Your new Tenant workspace is ready</h2>
+                <h2 class="title" th:if="${isTenantAdmin}">Your new Tenant workspace is ready</h2>
+                <h2 class="title" th:unless="${isTenantAdmin}">Invitation to join <span th:text="${tenantName}">Company</span></h2>
                 
                 <div class="greeting" th:text="${adminName != null ? 'Hello ' + adminName + ',' : 'Hello Administrator,'}">Hello Administrator,</div>
                 
@@ -220,8 +221,29 @@
                     </table>
                 </div>
 
-                <p class="body-text">
+                <!-- If Tenant Admin -->
+                <p class="body-text" th:if="${isTenantAdmin}">
                     The JobFusion Enterprise environment for <span class="tenant-highlight" th:text="${tenantName}">Global Talent Corp</span> has been successfully provisioned. You can now access your admin dashboard to configure recruitment funnels, invite team members, and set up your talent intelligence preferences.
+                </p>
+                
+                <!-- If both HR and Interviewer -->
+                <p class="body-text" th:if="${isHr && isInterviewer}">
+                    You have been added as an <span class="tenant-highlight">HR Specialist & Interviewer</span> for <span class="tenant-highlight" th:text="${tenantName}">Global Talent Corp</span> workspace. You can now log in to manage job postings, review candidates, and conduct interviews.
+                </p>
+                
+                <!-- If HR only -->
+                <p class="body-text" th:if="${isHr && !isInterviewer}">
+                    You have been added as an <span class="tenant-highlight">HR Specialist</span> for <span class="tenant-highlight" th:text="${tenantName}">Global Talent Corp</span> workspace. You can now log in to manage job postings, process candidate applications, and coordinate hiring pipelines.
+                </p>
+                
+                <!-- If Interviewer only -->
+                <p class="body-text" th:if="${isInterviewer && !isHr}">
+                    You have been added as an <span class="tenant-highlight">Interviewer</span> for <span class="tenant-highlight" th:text="${tenantName}">Global Talent Corp</span> workspace. You can now log in to view assigned candidates, manage your interview schedules, and submit candidate feedback.
+                </p>
+                
+                <!-- Fallback/Other Staff Roles -->
+                <p class="body-text" th:if="${!isTenantAdmin && !isHr && !isInterviewer}">
+                    You have been added as a team member for <span class="tenant-highlight" th:text="${tenantName}">Global Talent Corp</span> workspace. You can now log in to start collaborating with your team.
                 </p>
                 
                 <div class="btn-container">

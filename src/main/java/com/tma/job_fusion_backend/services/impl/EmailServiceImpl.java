@@ -62,7 +62,18 @@ public class EmailServiceImpl implements EmailService {
     @Override
     @Async("mailExecutor")
     public void sendTenantCreatedEmail(TenantCreatedEmailDto dto) {
-        String subject = "Your new Tenant workspace is ready";
+        String subject;
+        String roleStr = dto.getRole() != null ? dto.getRole().toUpperCase() : "";
+
+        boolean isTenantAdmin = roleStr.contains("TENANT_ADMIN");
+        boolean isHr = roleStr.contains("HR");
+        boolean isInterviewer = roleStr.contains("INTERVIEWER");
+
+        if (isTenantAdmin) {
+            subject = "Your new Tenant workspace is ready";
+        } else {
+            subject = "Invitation to join " + dto.getTenantName() + " on JobFusion";
+        }
 
         Context context = new Context();
         context.setVariable("adminName", dto.getAdminName());
@@ -71,13 +82,17 @@ public class EmailServiceImpl implements EmailService {
         context.setVariable("dashboardImageUrl", dto.getDashboardImageUrl());
         context.setVariable("adminEmail", dto.getToEmail());
         context.setVariable("adminPassword", dto.getAdminPassword());
+        context.setVariable("role", dto.getRole());
+        context.setVariable("isTenantAdmin", isTenantAdmin);
+        context.setVariable("isHr", isHr);
+        context.setVariable("isInterviewer", isInterviewer);
+
         sendHtmlEmail(dto.getToEmail(),
                 subject,
                 "tenant-created-email",
                 context,
                 "Tenant Created",
                 "Tenant: " + dto.getTenantName());
-
     }
 
     private void sendHtmlEmail(String toEmail, String subject, String templateName, Context context, String emailType, String simulatedSuffix) {
