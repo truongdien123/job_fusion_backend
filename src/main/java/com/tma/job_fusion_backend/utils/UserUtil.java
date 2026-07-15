@@ -36,8 +36,7 @@ public final class UserUtil {
 
     public static void validateAccess(UUID targetUserId, User targetUser, UserPrincipal currentUser) {
         // 1. Super Admin can access any user
-        boolean isSuperAdmin = currentUser.hasRole(RoleConstant.SUPER_ADMIN);
-        if (isSuperAdmin) {
+        if (currentUser.hasRole(RoleConstant.SUPER_ADMIN)) {
             return;
         }
 
@@ -50,13 +49,16 @@ public final class UserUtil {
         }
 
         // 3. Tenant Admin / HR / Interviewer can access themselves OR users belonging to their same tenant
-        if (!currentUser.getId().equals(targetUserId)) {
-            if (ObjectUtils.isEmpty(currentUser.getTenantId()) ||
-                    ObjectUtils.isEmpty(targetUser.getTenant()) ||
-                    !currentUser.getTenantId().equals(targetUser.getTenant().getId())) {
-                throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-            }
+        if (!currentUser.getId().equals(targetUserId) && !isSameTenant(currentUser, targetUser)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
+    }
+
+    private static boolean isSameTenant(UserPrincipal currentUser, User targetUser) {
+        if (ObjectUtils.isEmpty(currentUser.getTenantId()) || ObjectUtils.isEmpty(targetUser.getTenant())) {
+            return false;
+        }
+        return currentUser.getTenantId().equals(targetUser.getTenant().getId());
     }
 
     public static String resolveUserRole(User user, UserRoleRepository userRoleRepository) {

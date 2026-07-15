@@ -74,16 +74,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse createStaff(StaffRequest request) {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
-
-        // Ensure the current user is Tenant Admin
-        if (!currentUser.hasRole(RoleConstant.TENANT_ADMIN)) {
-            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-        }
-
-        UUID tenantId = currentUser.getTenantId();
-        if (ObjectUtils.isEmpty(tenantId)) {
-            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-        }
+        UUID tenantId = getRequiredTenantId(currentUser);
 
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
@@ -115,18 +106,7 @@ public class UserServiceImpl implements UserService {
         User savedStaff = userRepository.save(staff);
 
         // Find and assign requested roles
-        List<Role> roles = roleRepository.findByNameIn(request.getRole());
-        if (roles.size() != request.getRole().size()) {
-            throw new NotFoundException(ErrorCode.ROLE_NOT_FOUND);
-        }
-
-        for (Role role : roles) {
-            UserRole userRole = new UserRole();
-            userRole.setUser(savedStaff);
-            userRole.setRole(role);
-            userRole.setCreatedBy(currentUser.getId());
-            userRoleRepository.save(userRole);
-        }
+        assignRolesToUser(savedStaff, request.getRole(), currentUser.getId(), false);
 
         emailService.sendTenantCreatedEmail(
                 TenantCreatedEmailDto.builder()
@@ -149,15 +129,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> getListStaff(PagingRequest<?> request) {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
-
-        if (!currentUser.hasRole(RoleConstant.TENANT_ADMIN)) {
-            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-        }
-
-        UUID tenantId = currentUser.getTenantId();
-        if (ObjectUtils.isEmpty(tenantId)) {
-            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-        }
+        UUID tenantId = getRequiredTenantId(currentUser);
 
         Page<User> staffPage = userRepository.findAllByTenantIdAndDeletedAtIsNull(tenantId, request.toPageable());
         Page<UserResponse> mappedPage = staffPage.map(user -> {
@@ -175,11 +147,7 @@ public class UserServiceImpl implements UserService {
         User staff = findUserById(id);
 
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
-        if (!currentUser.hasRole(RoleConstant.TENANT_ADMIN) || 
-            staff.getTenant() == null ||
-            !currentUser.getTenantId().equals(staff.getTenant().getId())) {
-            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-        }
+        validateTenantAdminAccess(currentUser, staff);
 
         staff.setFullName(request.getFullName());
         if (request.getStatus() != null) {
@@ -190,21 +158,7 @@ public class UserServiceImpl implements UserService {
         User savedStaff = userRepository.save(staff);
 
         // Find and assign requested roles
-        List<Role> roles = roleRepository.findByNameIn(request.getRole());
-        if (roles.size() != request.getRole().size()) {
-            throw new NotFoundException(ErrorCode.ROLE_NOT_FOUND);
-        }
-
-        // Delete existing roles and assign new ones
-        userRoleRepository.deleteByUser(savedStaff);
-
-        for (Role role : roles) {
-            UserRole userRole = new UserRole();
-            userRole.setUser(savedStaff);
-            userRole.setRole(role);
-            userRole.setCreatedBy(currentUser.getId());
-            userRoleRepository.save(userRole);
-        }
+        assignRolesToUser(savedStaff, request.getRole(), currentUser.getId(), true);
 
         UserResponse response = userMapper.toUserResponse(savedStaff);
         response.setUserRole(String.join(", ", request.getRole()));
@@ -212,23 +166,13 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
-    private User findUserById(UUID id) {
-        return userRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
-    }
-
     @Override
     @Transactional
     public void deleteStaff(UUID id) {
-        User staff = userRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+        User staff = findUserById(id);
 
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
-        if (!currentUser.hasRole(RoleConstant.TENANT_ADMIN) || 
-            staff.getTenant() == null ||
-            !currentUser.getTenantId().equals(staff.getTenant().getId())) {
-            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-        }
+        validateTenantAdminAccess(currentUser, staff);
 
         // Soft delete user
         staff.setDeletedAt(DateTimeUtil.nowUtc());
@@ -241,6 +185,49 @@ public class UserServiceImpl implements UserService {
             ur.setDeletedAt(DateTimeUtil.nowUtc());
             ur.setUpdatedBy(currentUser.getId());
             userRoleRepository.save(ur);
+        }
+    }
+
+    private User findUserById(UUID id) {
+        return userRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private UUID getRequiredTenantId(UserPrincipal currentUser) {
+        if (!currentUser.hasRole(RoleConstant.TENANT_ADMIN)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+        UUID tenantId = currentUser.getTenantId();
+        if (ObjectUtils.isEmpty(tenantId)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+        return tenantId;
+    }
+
+    private void validateTenantAdminAccess(UserPrincipal currentUser, User staff) {
+        if (!currentUser.hasRole(RoleConstant.TENANT_ADMIN) || 
+            staff.getTenant() == null ||
+            !currentUser.getTenantId().equals(staff.getTenant().getId())) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+    }
+
+    private void assignRolesToUser(User user, List<String> roleNames, UUID currentUserId, boolean clearExisting) {
+        List<Role> roles = roleRepository.findByNameIn(roleNames);
+        if (roles.size() != roleNames.size()) {
+            throw new NotFoundException(ErrorCode.ROLE_NOT_FOUND);
+        }
+
+        if (clearExisting) {
+            userRoleRepository.deleteByUser(user);
+        }
+
+        for (Role role : roles) {
+            UserRole userRole = new UserRole();
+            userRole.setUser(user);
+            userRole.setRole(role);
+            userRole.setCreatedBy(currentUserId);
+            userRoleRepository.save(userRole);
         }
     }
 }
