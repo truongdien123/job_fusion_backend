@@ -18,4 +18,5 @@ public final class ErrorCode {
     public static final String ROLE_NOT_FOUND = "role_not_found";
     public static final String TENANT_NOT_FOUND = "tenant_not_found";
     public static final String PLAN_ALREADY_EXISTS = "plan_already_exists";
+    public static final String MAX_STAFF_LIMIT_REACHED = "max_staff_limit_reached";
 }

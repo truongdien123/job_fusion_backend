@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -28,8 +29,21 @@ public class UserPrincipal implements UserDetails {
         if (StringUtils.isEmpty(role)) {
             return List.of();
         }
-        String authorityName = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-        return List.of(new SimpleGrantedAuthority(authorityName));
+        return Arrays.stream(role.split(","))
+                .map(String::trim)
+                .filter(StringUtils::isNotEmpty)
+                .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                .map(SimpleGrantedAuthority::new)
+                .toList();
+    }
+
+    public boolean hasRole(String roleName) {
+        if (StringUtils.isEmpty(role)) {
+            return false;
+        }
+        return Arrays.stream(role.split(","))
+                .map(String::trim)
+                .anyMatch(roleName::equalsIgnoreCase);
     }
 
     @Override

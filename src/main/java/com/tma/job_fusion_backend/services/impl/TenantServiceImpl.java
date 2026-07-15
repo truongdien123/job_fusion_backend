@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.services.impl;
 
 import com.tma.job_fusion_backend.commons.ErrorCode;
+import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.enums.TenantStatus;
 import com.tma.job_fusion_backend.enums.UserStatus;
 import com.tma.job_fusion_backend.enums.UserType;
@@ -106,6 +107,7 @@ public class TenantServiceImpl implements TenantService {
                         .loginUrl(loginUrl)
                         .dashboardImageUrl(null)
                         .adminPassword(generatedPassword)
+                        .role(RoleConstant.TENANT_ADMIN)
                         .build()
         );
 

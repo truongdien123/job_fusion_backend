@@ -2,7 +2,6 @@ package com.tma.job_fusion_backend.services.impl;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.tma.job_fusion_backend.commons.ErrorCode;
-import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.components.UserPrincipal;
 import com.tma.job_fusion_backend.exceptions.*;
 import com.tma.job_fusion_backend.pojo.requests.*;
@@ -14,19 +13,17 @@ import com.tma.job_fusion_backend.mappers.UserMapper;
 import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.models.UserToken;
 import com.tma.job_fusion_backend.enums.TokenType;
-import com.tma.job_fusion_backend.models.UserRole;
 import com.tma.job_fusion_backend.repositories.UserRepository;
 import com.tma.job_fusion_backend.repositories.UserTokenRepository;
 import com.tma.job_fusion_backend.repositories.UserRoleRepository;
-import java.util.Optional;
 
 import com.tma.job_fusion_backend.repositories.query.UserTokenQueryRepository;
 import com.tma.job_fusion_backend.services.AuthService;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.utils.JwtUtil;
+import com.tma.job_fusion_backend.utils.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,7 +32,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.UUID;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 
@@ -177,7 +173,7 @@ public class AuthServiceImpl implements AuthService {
             throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
         }
 
-        String resolvedRole = resolveUserRole(user);
+        String resolvedRole = UserUtil.resolveUserRole(user, userRoleRepository);
 
         String token = jwtUtil.generateToken(
                 user.getId(),
@@ -213,10 +209,9 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void changePassword(ChangePasswordRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (ObjectUtils.isEmpty(authentication) || !(authentication.getPrincipal() instanceof UserPrincipal)) {
+        if (ObjectUtils.isEmpty(authentication) || !(authentication.getPrincipal() instanceof UserPrincipal principal)) {
             throw new InvalidCredentialsException(ErrorCode.INVALID_PASSWORD);
         }
-        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
 
         User user = checkUserById(principal.getId());
 
@@ -229,32 +224,6 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
-    }
-
-    private String resolveUserRole(User user) {
-        if (UserType.CANDIDATE == user.getType()) {
-            return RoleConstant.CANDIDATE;
-        }
-        Optional<UserRole> userRoleOpt = userRoleRepository.findByUser(user);
-        if (userRoleOpt.isPresent()) {
-            UserRole userRole = userRoleOpt.get();
-            if (ObjectUtils.isNotEmpty(userRole.getRole())) {
-                String roleName = userRole.getRole().getName();
-                if (RoleConstant.SUPER_ADMIN.equalsIgnoreCase(roleName)) {
-                    return RoleConstant.SUPER_ADMIN;
-                }
-                if (RoleConstant.TENANT_ADMIN.equalsIgnoreCase(roleName)) {
-                    return RoleConstant.TENANT_ADMIN;
-                }
-                if (RoleConstant.HR.equalsIgnoreCase(roleName)) {
-                    return RoleConstant.HR;
-                }
-                if (RoleConstant.INTERVIEWER.equalsIgnoreCase(roleName)) {
-                    return RoleConstant.INTERVIEWER;
-                }
-            }
-        }
-        return null;
     }
 
     private User checkUserByEmail(String email) {
