@@ -3,8 +3,7 @@ package com.tma.job_fusion_backend.controllers;
 import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
-import com.tma.job_fusion_backend.commons.validation.OnCreate;
-import com.tma.job_fusion_backend.commons.validation.OnUpdate;
+import jakarta.validation.Valid;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.requests.TenantRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
@@ -16,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -31,7 +29,7 @@ public class TenantController {
 
     @PostMapping
     @RequireRoles(RoleConstant.SUPER_ADMIN)
-    public ResponseEntity<?> createTenant(@Validated(OnCreate.class) @RequestBody TenantRequest request) {
+    public ResponseEntity<?> createTenant(@Valid @RequestBody TenantRequest request) {
         TenantResponse response = tenantService.createTenant(request);
         return ResponseUtil.success("Create tenant successfully", response);
     }
@@ -53,7 +51,7 @@ public class TenantController {
 
     @PutMapping(EndpointConstant.ENDPOINT_ID)
     @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
-    public ResponseEntity<?> updateTenant(@PathVariable UUID id, @Validated(OnUpdate.class) @RequestBody TenantRequest request) {
+    public ResponseEntity<?> updateTenant(@PathVariable UUID id, @Valid @RequestBody TenantRequest request) {
         TenantResponse response = tenantService.updateTenant(id, request);
         return ResponseUtil.success("Update tenant successfully", response);
     }

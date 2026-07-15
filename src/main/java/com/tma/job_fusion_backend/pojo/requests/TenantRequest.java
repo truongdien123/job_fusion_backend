@@ -1,7 +1,6 @@
 package com.tma.job_fusion_backend.pojo.requests;
 
-import com.tma.job_fusion_backend.commons.validation.OnCreate;
-import com.tma.job_fusion_backend.commons.validation.OnUpdate;
+
 import com.tma.job_fusion_backend.enums.TenantStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -17,26 +16,26 @@ import java.util.UUID;
 @Builder
 public class TenantRequest {
 
-    @NotBlank(message = "Company name is required", groups = {OnCreate.class})
+    @NotBlank(message = "Company name is required")
     private String companyName;
 
     private String domain;
 
-    @NotNull(message = "Plan ID is required", groups = {OnCreate.class})
+    @NotNull(message = "Plan ID is required")
     private UUID planId;
 
-    @NotBlank(message = "Region is required", groups = {OnCreate.class})
+    @NotBlank(message = "Region is required")
     private String region;
 
     // For create only
-    @NotBlank(message = "Admin email is required", groups = {OnCreate.class})
-    @Email(message = "Invalid admin email format", groups = {OnCreate.class})
+    @NotBlank(message = "Admin email is required")
+    @Email(message = "Invalid admin email format")
     private String adminEmail;
 
-    @NotBlank(message = "Admin full name is required", groups = {OnCreate.class})
+    @NotBlank(message = "Admin full name is required")
     private String adminFullName;
 
-    @NotBlank(message = "Industry is required", groups = {OnCreate.class})
+    @NotBlank(message = "Industry is required")
     private String industry;
 
     private TenantStatus status;

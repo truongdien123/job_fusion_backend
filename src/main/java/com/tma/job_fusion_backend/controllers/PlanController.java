@@ -3,8 +3,7 @@ package com.tma.job_fusion_backend.controllers;
 import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
-import com.tma.job_fusion_backend.commons.validation.OnCreate;
-import com.tma.job_fusion_backend.commons.validation.OnUpdate;
+import jakarta.validation.Valid;
 import com.tma.job_fusion_backend.pojo.requests.PlanRequest;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
@@ -16,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -31,7 +29,7 @@ public class PlanController {
 
     @PostMapping
     @RequireRoles(RoleConstant.SUPER_ADMIN)
-    public ResponseEntity<?> createPlan(@Validated(OnCreate.class) @RequestBody PlanRequest request) {
+    public ResponseEntity<?> createPlan(@Valid @RequestBody PlanRequest request) {
         PlanResponse response = planService.createPlan(request);
         return ResponseUtil.success("Create plan successfully", response);
     }
@@ -53,7 +51,7 @@ public class PlanController {
 
     @PutMapping(EndpointConstant.ENDPOINT_ID)
     @RequireRoles(RoleConstant.SUPER_ADMIN)
-    public ResponseEntity<?> updatePlan(@PathVariable UUID id, @Validated(OnUpdate.class) @RequestBody PlanRequest request) {
+    public ResponseEntity<?> updatePlan(@PathVariable UUID id, @Valid @RequestBody PlanRequest request) {
         PlanResponse response = planService.updatePlan(id, request);
         return ResponseUtil.success("Update plan successfully", response);
     }
