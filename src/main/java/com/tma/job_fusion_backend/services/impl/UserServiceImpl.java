@@ -14,7 +14,9 @@ import com.tma.job_fusion_backend.pojo.requests.StaffRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
 import com.tma.job_fusion_backend.repositories.*;
+import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.repositories.query.UserQueryRepository;
+import com.tma.job_fusion_backend.repositories.query.UserTokenQueryRepository;
 import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.services.UserService;
@@ -46,6 +48,7 @@ public class UserServiceImpl implements UserService {
     private final EmailService emailService;
     private final JwtUtil jwtUtil;
     private final UserTokenRepository userTokenRepository;
+    private final UserTokenQueryRepository userTokenQueryRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -94,7 +97,7 @@ public class UserServiceImpl implements UserService {
         staff.setCreatedBy(currentUser.getId());
         staff.setEmployeeCode(UserUtil.generateEmployeeCode());
 
-        UserUtil.createAndSaveUserRole(staff, jwtUtil, userTokenRepository);
+        String token = UserUtil.createAndSaveUserRole(staff, jwtUtil, userTokenRepository);
 
         User savedStaff = userRepository.save(staff);
 
@@ -106,7 +109,7 @@ public class UserServiceImpl implements UserService {
                         .toEmail(savedStaff.getEmail())
                         .adminName(savedStaff.getFullName())
                         .tenantName(tenant.getCompanyName())
-                        .activationUrl(jwtUtil.getActivationUrl())
+                        .activationUrl(jwtUtil.getActivationUrl(token))
                         .dashboardImageUrl(null)
                         .adminPassword(password)
                         .role(String.join(", ", request.getRole()))
@@ -222,5 +225,51 @@ public class UserServiceImpl implements UserService {
             userRole.setCreatedBy(currentUserId);
             userRoleRepository.save(userRole);
         }
+    }
+
+    @Override
+    @Transactional
+    public void resendStaffActivation(UUID id) {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        UUID tenantId = getRequiredTenantId(currentUser);
+
+        User staff = findUserById(id);
+
+        // Access control check: Target user must belong to the same tenant
+        if (staff.getTenant() == null || !tenantId.equals(staff.getTenant().getId())) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // Validate status: must be PENDING
+        if (staff.getStatus() != UserStatus.PENDING) {
+            throw new BadRequestException("User is already active or disabled");
+        }
+
+        // Invalidate old tokens
+        userTokenQueryRepository.invalidateOldToken(staff, TokenType.ACTIVATION, DateTimeUtil.nowUtc());
+
+        // Generate new password
+        String newPassword = PasswordUtil.generateRandomPassword();
+        staff.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(staff);
+
+        // Generate new activation token
+        String token = UserUtil.createAndSaveUserRole(staff, jwtUtil, userTokenRepository);
+
+        // Fetch user roles
+        String resolvedRole = UserUtil.resolveUserRole(staff, userRoleRepository);
+
+        // Send email
+        emailService.sendTenantCreatedEmail(
+                TenantCreatedEmailDto.builder()
+                        .toEmail(staff.getEmail())
+                        .adminName(staff.getFullName())
+                        .tenantName(staff.getTenant().getCompanyName())
+                        .activationUrl(jwtUtil.getActivationUrl(token))
+                        .dashboardImageUrl(null)
+                        .adminPassword(newPassword)
+                        .role(resolvedRole)
+                        .build()
+        );
     }
 }

@@ -97,7 +97,7 @@ public class TenantServiceImpl implements TenantService {
         userRole.setCreatedBy(jwtUtil.getCurrentUserId());
         userRoleRepository.save(userRole);
 
-        UserUtil.createAndSaveUserRole(adminUser, jwtUtil, userTokenRepository);
+        String token = UserUtil.createAndSaveUserRole(adminUser, jwtUtil, userTokenRepository);
 
         emailService.sendTenantCreatedEmail(
                 TenantCreatedEmailDto.builder()
@@ -107,7 +107,7 @@ public class TenantServiceImpl implements TenantService {
                         .dashboardImageUrl(null)
                         .adminPassword(generatedPassword)
                         .role(RoleConstant.TENANT_ADMIN)
-                        .activationUrl(jwtUtil.getActivationUrl())
+                        .activationUrl(jwtUtil.getActivationUrl(token))
                         .build()
         );
 

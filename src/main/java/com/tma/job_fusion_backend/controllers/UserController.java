@@ -58,4 +58,11 @@ public class UserController {
         userService.deleteStaff(id);
         return ResponseUtil.success("Delete staff successfully", null);
     }
+
+    @PostMapping(EndpointConstant.ENDPOINT_STAFF_RESEND_ACTIVATION)
+    @RequireRoles(RoleConstant.TENANT_ADMIN)
+    public ResponseEntity<?> resendStaffActivation(@PathVariable UUID id) {
+        userService.resendStaffActivation(id);
+        return ResponseUtil.success("Resend staff activation link successfully", null);
+    }
 }
