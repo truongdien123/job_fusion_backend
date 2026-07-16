@@ -3,32 +3,24 @@ package com.tma.job_fusion_backend.services.impl;
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.components.UserPrincipal;
+import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.enums.UserStatus;
 import com.tma.job_fusion_backend.enums.UserType;
 import com.tma.job_fusion_backend.exceptions.BadRequestException;
 import com.tma.job_fusion_backend.exceptions.NotFoundException;
 import com.tma.job_fusion_backend.mappers.UserMapper;
-import com.tma.job_fusion_backend.models.Role;
-import com.tma.job_fusion_backend.models.Tenant;
-import com.tma.job_fusion_backend.models.User;
-import com.tma.job_fusion_backend.models.UserRole;
+import com.tma.job_fusion_backend.models.*;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.requests.StaffRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
-import com.tma.job_fusion_backend.repositories.RoleRepository;
-import com.tma.job_fusion_backend.repositories.TenantRepository;
-import com.tma.job_fusion_backend.repositories.UserRepository;
-import com.tma.job_fusion_backend.repositories.UserRoleRepository;
+import com.tma.job_fusion_backend.repositories.*;
 import com.tma.job_fusion_backend.repositories.query.UserQueryRepository;
 import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.services.UserService;
-import com.tma.job_fusion_backend.utils.DateTimeUtil;
+import com.tma.job_fusion_backend.utils.*;
 import org.springframework.beans.factory.annotation.Value;
-import com.tma.job_fusion_backend.utils.PasswordUtil;
-import com.tma.job_fusion_backend.utils.UserUtil;
-import com.tma.job_fusion_backend.utils.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.security.access.AccessDeniedException;
@@ -54,9 +46,8 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-
-    @Value("${app.activation}")
-    private String activationLink;
+    private final JwtUtil jwtUtil;
+    private final UserTokenRepository userTokenRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -98,12 +89,14 @@ public class UserServiceImpl implements UserService {
         // Map request to User entity
         User staff = userMapper.toEntity(request);
         staff.setPassword(passwordEncoder.encode(password));
-        staff.setStatus(request.getStatus() != null ? request.getStatus() : UserStatus.ACTIVE);
+        staff.setStatus(UserStatus.PENDING);
         staff.setType(UserType.TENANT);
         staff.setTenant(tenant);
         staff.setActivatedDate(DateTimeUtil.nowUtc());
         staff.setCreatedBy(currentUser.getId());
         staff.setEmployeeCode(UserUtil.generateEmployeeCode());
+
+        UserUtil.createAndSaveUserRole(staff, jwtUtil, userTokenRepository);
 
         User savedStaff = userRepository.save(staff);
 
@@ -115,7 +108,7 @@ public class UserServiceImpl implements UserService {
                         .toEmail(savedStaff.getEmail())
                         .adminName(savedStaff.getFullName())
                         .tenantName(tenant.getCompanyName())
-                        .activationUrl(activationLink)
+                        .activationUrl(jwtUtil.getActivationUrl())
                         .dashboardImageUrl(null)
                         .adminPassword(password)
                         .role(String.join(", ", request.getRole()))
