@@ -34,8 +34,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.UUID;
-import com.tma.job_fusion_backend.utils.DateTimeUtil;
 
 @Service
 @RequiredArgsConstructor
@@ -245,9 +245,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public AuthResponse activateAccount(ActivationRequest request) {
-        UserToken token = userTokenQueryRepository.findByTokenAndTokenTypeAndUsedAndExpiredAtAfter(
-                request.getToken(), TokenType.ACTIVATION, false, DateTimeUtil.nowUtc()
-        ).orElseThrow(() -> new BadRequestException(ErrorCode.INVALID_TOKEN));
+        UserToken token = getUserToken(request.getToken(), DateTimeUtil.nowUtc());
 
         token.setUsed(true);
         userTokenRepository.save(token);
@@ -263,9 +261,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public ActivationDetailsResponse getActivationDetails(String tokenStr) {
-        UserToken token = userTokenQueryRepository.findByTokenAndTokenTypeAndUsedAndExpiredAtAfter(
-                tokenStr, TokenType.ACTIVATION, false, DateTimeUtil.nowUtc()
-        ).orElseThrow(() -> new BadRequestException(ErrorCode.INVALID_TOKEN));
+        UserToken token = getUserToken(tokenStr, DateTimeUtil.nowUtc());
 
         User user = token.getUser();
         String resolvedRole = UserUtil.resolveUserRole(user, userRoleRepository);
@@ -275,5 +271,11 @@ public class AuthServiceImpl implements AuthService {
                 .role(resolvedRole)
                 .email(user.getEmail())
                 .build();
+    }
+
+    private UserToken getUserToken(String token, LocalDateTime time) {
+        return userTokenQueryRepository.findByTokenAndTokenTypeAndUsedAndExpiredAtAfter(
+                token, TokenType.ACTIVATION, false, time
+        ).orElseThrow(() -> new BadRequestException(ErrorCode.INVALID_TOKEN));
     }
 }

@@ -18,6 +18,8 @@ import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.projections.TenantRevenueProjection;
 import com.tma.job_fusion_backend.projections.TenantUsageProjection;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -57,11 +59,11 @@ public class TenantQueryRepository {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(qTenant.deletedAt.isNull());
 
-        if (filter != null) {
-            if (filter.getStatus() != null) {
+        if (ObjectUtils.isNotEmpty(filter)) {
+            if (ObjectUtils.isNotEmpty(filter.getStatus())) {
                 builder.and(qTenant.status.eq(filter.getStatus()));
             }
-            if (filter.getCompanyName() != null && !filter.getCompanyName().trim().isEmpty()) {
+            if (StringUtils.isNotEmpty(filter.getCompanyName())) {
                 builder.and(qTenant.companyName.containsIgnoreCase(filter.getCompanyName().trim()));
             }
         }
