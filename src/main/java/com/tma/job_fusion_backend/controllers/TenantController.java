@@ -5,6 +5,7 @@ import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import jakarta.validation.Valid;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
+import com.tma.job_fusion_backend.pojo.dtos.TenantFilter;
 import com.tma.job_fusion_backend.pojo.requests.TenantRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
@@ -16,7 +17,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.UUID;
 
 @RestController
@@ -36,9 +36,10 @@ public class TenantController {
 
     @PostMapping(EndpointConstant.ENDPOINT_LIST)
     @RequireRoles(RoleConstant.SUPER_ADMIN)
-    public ResponseEntity<?> getListTenant(@RequestBody PagingRequest<?> request) {
+    public ResponseEntity<?> getListTenant(@RequestBody PagingRequest<TenantFilter> request) {
         Pageable pageable = request.toPageable();
-        Page<TenantResponse> listTenant = tenantService.getListTenant(pageable);
+        TenantFilter filter = request.getFilters();
+        Page<TenantResponse> listTenant = tenantService.getListTenant(filter, pageable);
         return ResponseUtil.success("Get tenants successfully", PageResponse.of(listTenant));
     }
 

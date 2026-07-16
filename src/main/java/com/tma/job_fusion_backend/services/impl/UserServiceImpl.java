@@ -20,6 +20,7 @@ import com.tma.job_fusion_backend.repositories.RoleRepository;
 import com.tma.job_fusion_backend.repositories.TenantRepository;
 import com.tma.job_fusion_backend.repositories.UserRepository;
 import com.tma.job_fusion_backend.repositories.UserRoleRepository;
+import com.tma.job_fusion_backend.repositories.query.UserQueryRepository;
 import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.services.UserService;
@@ -46,6 +47,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final UserQueryRepository userQueryRepository;
     private final UserMapper userMapper;
     private final ValidationUtil validationUtil;
     private final TenantRepository tenantRepository;
@@ -131,7 +133,7 @@ public class UserServiceImpl implements UserService {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
         UUID tenantId = getRequiredTenantId(currentUser);
 
-        Page<User> staffPage = userRepository.findAllByTenantIdAndDeletedAtIsNull(tenantId, request.toPageable());
+        Page<User> staffPage = userQueryRepository.findStaffByTenantId(tenantId, RoleConstant.TENANT_ADMIN, request.toPageable());
         Page<UserResponse> mappedPage = staffPage.map(user -> {
             UserResponse response = userMapper.toUserResponse(user);
             response.setUserRole(UserUtil.resolveUserRole(user, userRoleRepository));

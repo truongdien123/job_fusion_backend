@@ -9,6 +9,7 @@ import com.tma.job_fusion_backend.enums.UserType;
 import com.tma.job_fusion_backend.exceptions.*;
 import com.tma.job_fusion_backend.models.*;
 import com.tma.job_fusion_backend.pojo.requests.TenantRequest;
+import com.tma.job_fusion_backend.pojo.dtos.TenantFilter;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
 import com.tma.job_fusion_backend.repositories.*;
 import com.tma.job_fusion_backend.repositories.query.TenantQueryRepository;
@@ -85,6 +86,7 @@ public class TenantServiceImpl implements TenantService {
         adminUser.setStatus(UserStatus.PENDING);
         adminUser.setType(UserType.TENANT);
         adminUser.setTenant(savedTenant);
+        adminUser.setActivatedDate(DateTimeUtil.nowUtc());
         adminUser.setCreatedBy(jwtUtil.getCurrentUserId());
 
         User savedAdminUser = userRepository.save(adminUser);
@@ -124,8 +126,8 @@ public class TenantServiceImpl implements TenantService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TenantResponse> getListTenant(Pageable pageable) {
-        return tenantQueryRepository.findAllActiveTenants(pageable);
+    public Page<TenantResponse> getListTenant(TenantFilter filter, Pageable pageable) {
+        return tenantQueryRepository.findAllActiveTenants(filter, pageable);
     }
 
     @Override
