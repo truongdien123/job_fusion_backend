@@ -11,6 +11,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_USER_BASE = "/user";
     public static final String ENDPOINT_DASHBOARD_BASE = "/dashboard";
     public static final String ENDPOINT_STAFF_BASE = "/staff";
+    public static final String ENDPOINT_ACTIVITY_LOG_BASE = "/activity-log";
 
     // Core endpoints with /api
     public static final String ENDPOINT_AUTH = ENDPOINT_PREFIX + ENDPOINT_AUTH_BASE;
@@ -18,6 +19,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_TENANT = ENDPOINT_PREFIX + ENDPOINT_TENANT_BASE;
     public static final String ENDPOINT_USER = ENDPOINT_PREFIX + ENDPOINT_USER_BASE;
     public static final String ENDPOINT_DASHBOARD = ENDPOINT_PREFIX + ENDPOINT_DASHBOARD_BASE;
+    public static final String ENDPOINT_ACTIVITY_LOG = ENDPOINT_PREFIX + ENDPOINT_ACTIVITY_LOG_BASE;
 
     // Authentication methods
     public static final String ENDPOINT_SIGNIN_BASE = "/signin";
@@ -54,4 +56,5 @@ public final class EndpointConstant {
     public static final String ENDPOINT_STATS_TENANT = ENDPOINT_STATS + ENDPOINT_TENANT_BASE;
     public static final String ENDPOINT_STAFF_LIST = ENDPOINT_STAFF_BASE + ENDPOINT_LIST;
     public static final String ENDPOINT_STAFF_ID = ENDPOINT_STAFF_BASE + ENDPOINT_ID;
+    public static final String ENDPOINT_STAFF_RESEND_ACTIVATION = ENDPOINT_STAFF_BASE + ENDPOINT_ID + "/resend-activation";
 }

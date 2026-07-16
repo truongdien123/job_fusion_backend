@@ -69,9 +69,12 @@ public class JwtUtil {
                 .sign(Algorithm.HMAC256(secret));
     }
 
+    public String getActivationUrl(String token) {
+        return activationLink + "?token=" + token;
+    }
+
     public String getActivationUrl() {
-        String activationTokenStr = getActivationToken();
-        return activationLink + "?token=" + activationTokenStr;
+        return getActivationUrl(getActivationToken());
     }
 
     public String getActivationToken() {

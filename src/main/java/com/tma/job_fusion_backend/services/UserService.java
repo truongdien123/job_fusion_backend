@@ -12,4 +12,5 @@ public interface UserService {
     PageResponse<UserResponse> getListStaff(PagingRequest<?> request);
     UserResponse updateStaff(UUID id, StaffRequest request);
     void deleteStaff(UUID id);
+    void resendStaffActivation(UUID id);
 }
