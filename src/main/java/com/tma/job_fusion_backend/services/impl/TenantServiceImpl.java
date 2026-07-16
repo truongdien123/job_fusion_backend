@@ -16,10 +16,7 @@ import com.tma.job_fusion_backend.repositories.query.TenantQueryRepository;
 import com.tma.job_fusion_backend.repositories.query.UserRoleQueryRepository;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.services.TenantService;
-import com.tma.job_fusion_backend.utils.DateTimeUtil;
-import com.tma.job_fusion_backend.utils.JwtUtil;
-import com.tma.job_fusion_backend.utils.PasswordUtil;
-import com.tma.job_fusion_backend.utils.ValidationUtil;
+import com.tma.job_fusion_backend.utils.*;
 import com.tma.job_fusion_backend.mappers.TenantMapper;
 import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import lombok.RequiredArgsConstructor;
@@ -100,14 +97,7 @@ public class TenantServiceImpl implements TenantService {
         userRole.setCreatedBy(jwtUtil.getCurrentUserId());
         userRoleRepository.save(userRole);
 
-        String activationTokenStr = UUID.randomUUID().toString();
-        UserToken activationToken = new UserToken();
-        activationToken.setUser(savedAdminUser);
-        activationToken.setToken(activationTokenStr);
-        activationToken.setTokenType(TokenType.ACTIVATION);
-        activationToken.setExpiredAt(DateTimeUtil.nowUtc().plusDays(7));
-        activationToken.setUsed(false);
-        userTokenRepository.save(activationToken);
+        UserUtil.createAndSaveUserRole(adminUser, jwtUtil, userTokenRepository);
 
         emailService.sendTenantCreatedEmail(
                 TenantCreatedEmailDto.builder()
@@ -117,7 +107,7 @@ public class TenantServiceImpl implements TenantService {
                         .dashboardImageUrl(null)
                         .adminPassword(generatedPassword)
                         .role(RoleConstant.TENANT_ADMIN)
-                        .activationUrl(activationLink)
+                        .activationUrl(jwtUtil.getActivationUrl())
                         .build()
         );
 

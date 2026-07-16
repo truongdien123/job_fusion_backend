@@ -3,11 +3,14 @@ package com.tma.job_fusion_backend.utils;
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.components.UserPrincipal;
+import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.enums.UserType;
 import com.tma.job_fusion_backend.models.Role;
 import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.models.UserRole;
+import com.tma.job_fusion_backend.models.UserToken;
 import com.tma.job_fusion_backend.repositories.UserRoleRepository;
+import com.tma.job_fusion_backend.repositories.UserTokenRepository;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -52,6 +55,16 @@ public final class UserUtil {
         if (!currentUser.getId().equals(targetUserId) && !isSameTenant(currentUser, targetUser)) {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
+    }
+
+    public static void createAndSaveUserRole(User user, JwtUtil jwtUtil, UserTokenRepository userTokenRepository) {
+        UserToken activationToken = new UserToken();
+        activationToken.setUser(user);
+        activationToken.setToken(jwtUtil.getActivationToken());
+        activationToken.setTokenType(TokenType.ACTIVATION);
+        activationToken.setExpiredAt(DateTimeUtil.nowUtc().plusDays(7));
+        activationToken.setUsed(false);
+        userTokenRepository.save(activationToken);
     }
 
     private static boolean isSameTenant(UserPrincipal currentUser, User targetUser) {
