@@ -247,7 +247,7 @@
                 </p>
                 
                 <div class="btn-container">
-                    <a th:href="${loginUrl != null ? loginUrl : '#'}" class="btn">Go to Login</a>
+                    <a th:if="${isTenantAdmin}" th:href="${activationUrl != null ? activationUrl : '#'}" class="btn">Activate Account</a>
                 </div>
                 
                 <div class="image-card">

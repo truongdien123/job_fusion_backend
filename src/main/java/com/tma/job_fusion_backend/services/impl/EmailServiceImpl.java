@@ -78,11 +78,11 @@ public class EmailServiceImpl implements EmailService {
         Context context = new Context();
         context.setVariable("adminName", dto.getAdminName());
         context.setVariable("tenantName", dto.getTenantName());
-        context.setVariable("loginUrl", dto.getLoginUrl());
         context.setVariable("dashboardImageUrl", dto.getDashboardImageUrl());
         context.setVariable("adminEmail", dto.getToEmail());
         context.setVariable("adminPassword", dto.getAdminPassword());
         context.setVariable("role", dto.getRole());
+        context.setVariable("activationUrl", dto.getActivationUrl());
         context.setVariable("isTenantAdmin", isTenantAdmin);
         context.setVariable("isHr", isHr);
         context.setVariable("isInterviewer", isInterviewer);

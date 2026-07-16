@@ -11,8 +11,8 @@ public class TenantCreatedEmailDto {
     private String toEmail;
     private String adminName;
     private String tenantName;
-    private String loginUrl;
     private String dashboardImageUrl;
     private String adminPassword;
     private String role;
+    private String activationUrl;
 }

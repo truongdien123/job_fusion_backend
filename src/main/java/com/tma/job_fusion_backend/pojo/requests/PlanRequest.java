@@ -36,7 +36,9 @@ public class PlanRequest {
     @NotNull(message = "Active job posting unlimited flag is required")
     private Boolean activeJobPostingUnlimited;
 
+    @NotNull(message = "Status is required")
     private PlanStatus status;
 
+    @NotEmpty(message = "Features list is required")
     private List<FeatureDto> features;
 }

@@ -3,21 +3,20 @@ package com.tma.job_fusion_backend.controllers;
 import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
-import com.tma.job_fusion_backend.pojo.requests.CreateTenantRequest;
+import jakarta.validation.Valid;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
+import com.tma.job_fusion_backend.pojo.dtos.TenantFilter;
+import com.tma.job_fusion_backend.pojo.requests.TenantRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
 import com.tma.job_fusion_backend.services.TenantService;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import com.tma.job_fusion_backend.pojo.requests.UpdateTenantRequest;
 import java.util.UUID;
 
 @RestController
@@ -30,16 +29,17 @@ public class TenantController {
 
     @PostMapping
     @RequireRoles(RoleConstant.SUPER_ADMIN)
-    public ResponseEntity<?> createTenant(@Valid @RequestBody CreateTenantRequest request) {
+    public ResponseEntity<?> createTenant(@Valid @RequestBody TenantRequest request) {
         TenantResponse response = tenantService.createTenant(request);
         return ResponseUtil.success("Create tenant successfully", response);
     }
 
     @PostMapping(EndpointConstant.ENDPOINT_LIST)
     @RequireRoles(RoleConstant.SUPER_ADMIN)
-    public ResponseEntity<?> getListTenant(@RequestBody PagingRequest<?> request) {
+    public ResponseEntity<?> getListTenant(@RequestBody PagingRequest<TenantFilter> request) {
         Pageable pageable = request.toPageable();
-        Page<TenantResponse> listTenant = tenantService.getListTenant(pageable);
+        TenantFilter filter = request.getFilters();
+        Page<TenantResponse> listTenant = tenantService.getListTenant(filter, pageable);
         return ResponseUtil.success("Get tenants successfully", PageResponse.of(listTenant));
     }
 
@@ -52,7 +52,7 @@ public class TenantController {
 
     @PutMapping(EndpointConstant.ENDPOINT_ID)
     @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
-    public ResponseEntity<?> updateTenant(@PathVariable UUID id, @Valid @RequestBody UpdateTenantRequest request) {
+    public ResponseEntity<?> updateTenant(@PathVariable UUID id, @Valid @RequestBody TenantRequest request) {
         TenantResponse response = tenantService.updateTenant(id, request);
         return ResponseUtil.success("Update tenant successfully", response);
     }

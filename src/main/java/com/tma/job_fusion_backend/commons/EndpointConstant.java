@@ -44,6 +44,9 @@ public final class EndpointConstant {
     public static final String ENDPOINT_CHANGE_PASSWORD_BASE = "/change-password";
     public static final String ENDPOINT_CHANGE_PASSWORD = ENDPOINT_AUTH + ENDPOINT_CHANGE_PASSWORD_BASE;
 
+    public static final String ENDPOINT_ACTIVATE_BASE = "/activate";
+    public static final String ENDPOINT_ACTIVATE = ENDPOINT_AUTH + ENDPOINT_ACTIVATE_BASE;
+
     // Utility & Common sub-paths
     public static final String ENDPOINT_LIST = "/list";
     public static final String ENDPOINT_ID = "/{id}";

@@ -2,6 +2,7 @@ package com.tma.job_fusion_backend.controllers;
 
 import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.pojo.requests.*;
+import com.tma.job_fusion_backend.pojo.responses.ActivationDetailsResponse;
 import com.tma.job_fusion_backend.pojo.responses.AuthResponse;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
 import com.tma.job_fusion_backend.services.AuthService;
@@ -24,6 +25,18 @@ public class AuthController {
     public ResponseEntity<?> signUp(@Valid @RequestBody SignUpRequest request) {
         UserResponse registeredUser = authService.signUp(request);
         return ResponseUtil.success("Sign up successful", registeredUser);
+    }
+
+    @PostMapping(EndpointConstant.ENDPOINT_ACTIVATE_BASE)
+    public ResponseEntity<?> activateAccount(@Valid @RequestBody ActivationRequest request) {
+        AuthResponse response = authService.activateAccount(request);
+        return ResponseUtil.success("Account activated successfully", response);
+    }
+
+    @GetMapping(EndpointConstant.ENDPOINT_ACTIVATE_BASE)
+    public ResponseEntity<?> getActivationDetails(@RequestParam String token) {
+        ActivationDetailsResponse response = authService.getActivationDetails(token);
+        return ResponseUtil.success("Get activation details successfully", response);
     }
 
     @PostMapping(EndpointConstant.ENDPOINT_SIGNIN_BASE)

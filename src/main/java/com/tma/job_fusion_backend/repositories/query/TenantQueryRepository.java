@@ -1,7 +1,9 @@
 package com.tma.job_fusion_backend.repositories.query;
 
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.tma.job_fusion_backend.pojo.dtos.TenantFilter;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -15,12 +17,9 @@ import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.projections.TenantRevenueProjection;
 import com.tma.job_fusion_backend.projections.TenantUsageProjection;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -40,7 +39,7 @@ public class TenantQueryRepository {
     private final JPAQueryFactory queryFactory;
 
     @Transactional(readOnly = true)
-    public Page<TenantResponse> findAllActiveTenants(Pageable pageable) {
+    public Page<TenantResponse> findAllActiveTenants(TenantFilter filter, Pageable pageable) {
         QTenant qTenant = QTenant.tenant;
         QUserRole qUserRole = QUserRole.userRole;
         QUser qUser = QUser.user;
@@ -56,6 +55,18 @@ public class TenantQueryRepository {
                 .from(qUser)
                 .where(qUser.tenant.id.eq(qTenant.id)
                         .and(qUser.deletedAt.isNull()));
+
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(qTenant.deletedAt.isNull());
+
+        if (ObjectUtils.isNotEmpty(filter)) {
+            if (ObjectUtils.isNotEmpty(filter.getStatus())) {
+                builder.and(qTenant.status.eq(filter.getStatus()));
+            }
+            if (StringUtils.isNotEmpty(filter.getCompanyName())) {
+                builder.and(qTenant.companyName.containsIgnoreCase(filter.getCompanyName().trim()));
+            }
+        }
 
         List<TenantResponse> content = queryFactory.select(Projections.constructor(TenantResponse.class,
                         qTenant.id,
@@ -74,14 +85,14 @@ public class TenantQueryRepository {
                         qTenant.createdAt
                 ))
                 .from(qTenant)
-                .where(qTenant.deletedAt.isNull())
+                .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         Long total = queryFactory.select(qTenant.count())
                 .from(qTenant)
-                .where(qTenant.deletedAt.isNull())
+                .where(builder)
                 .fetchOne();
 
         long totalCount = Optional.ofNullable(total).orElse(0L);
@@ -98,8 +109,6 @@ public class TenantQueryRepository {
                 .fetchOne();
         return Optional.ofNullable(tenant);
     }
-
-
 
     @Transactional(readOnly = true)
     public Double calculateTotalRevenue() {
