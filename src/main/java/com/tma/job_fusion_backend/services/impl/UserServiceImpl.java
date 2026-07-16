@@ -236,13 +236,13 @@ public class UserServiceImpl implements UserService {
         User staff = findUserById(id);
 
         // Access control check: Target user must belong to the same tenant
-        if (staff.getTenant() == null || !tenantId.equals(staff.getTenant().getId())) {
+        if (ObjectUtils.isEmpty(staff.getTenant()) || !tenantId.equals(staff.getTenant().getId())) {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
 
         // Validate status: must be PENDING
         if (staff.getStatus() != UserStatus.PENDING) {
-            throw new BadRequestException("User is already active or disabled");
+            throw new BadRequestException(ErrorCode.STAFF_ALREADY_ACTIVE);
         }
 
         // Invalidate old tokens
