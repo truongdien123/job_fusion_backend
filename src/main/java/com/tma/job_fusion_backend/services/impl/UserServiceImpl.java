@@ -3,7 +3,6 @@ package com.tma.job_fusion_backend.services.impl;
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.components.UserPrincipal;
-import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.enums.UserStatus;
 import com.tma.job_fusion_backend.enums.UserType;
 import com.tma.job_fusion_backend.exceptions.BadRequestException;
@@ -20,7 +19,6 @@ import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.services.UserService;
 import com.tma.job_fusion_backend.utils.*;
-import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.security.access.AccessDeniedException;
@@ -29,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.UUID;
 

@@ -81,10 +81,6 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException(ErrorCode.INVALID_PASSWORD);
         }
 
-        if (UserStatus.ACTIVE != user.getStatus()) {
-            throw new BadRequestException(ErrorCode.INACTIVE_USER);
-        }
-
         return handleUserToResponse(user);
     }
 
