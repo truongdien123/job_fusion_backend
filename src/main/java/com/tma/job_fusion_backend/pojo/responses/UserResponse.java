@@ -27,6 +27,7 @@ public class UserResponse {
     private UserType type;
     private String userRole;
     private UUID tenantId;
+    private UUID planId;
     private LocalDateTime createdAt;
     private String officeLocation;
 }
