@@ -195,7 +195,7 @@ public class AuthServiceImpl implements AuthService {
 
         UserResponse userResponse = userMapper.toUserResponse(user);
         userResponse.setUserRole(resolvedRole);
-        userResponse.setPlanId(user.getTenant().getPlan().getId());
+        userResponse.setPlanId(ObjectUtils.isNotEmpty(user.getTenant()) ? user.getTenant().getPlan().getId() : null);
         return AuthResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
