@@ -35,7 +35,7 @@ public class PlanController {
     }
 
     @PostMapping(EndpointConstant.ENDPOINT_LIST)
-    @RequireRoles(RoleConstant.SUPER_ADMIN)
+    @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
     public ResponseEntity<?> getListPlan(@RequestBody PagingRequest<?> request) {
         Pageable pageable = request.toPageable();
         Page<PlanResponse> listPlan = planService.getListPlan(pageable);
@@ -43,7 +43,7 @@ public class PlanController {
     }
 
     @GetMapping(EndpointConstant.ENDPOINT_ID)
-    @RequireRoles(RoleConstant.SUPER_ADMIN)
+    @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
     public ResponseEntity<?> getPlanDetail(@PathVariable UUID id) {
         PlanResponse response = planService.getPlanDetail(id);
         return ResponseUtil.success("Get plan detail successfully", response);
