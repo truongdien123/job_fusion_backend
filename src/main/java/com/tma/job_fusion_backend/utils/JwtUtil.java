@@ -107,6 +107,10 @@ public class JwtUtil {
         return decodedJWT.getClaim("fullName").asString();
     }
 
+    public Date getIssuedAtFromToken(DecodedJWT decodedJWT) {
+        return decodedJWT.getIssuedAt();
+    }
+
     public UserPrincipal getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal) {

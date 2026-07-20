@@ -1,9 +1,8 @@
 package com.tma.job_fusion_backend.pojo.requests;
 
+import com.tma.job_fusion_backend.annotations.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Getter
@@ -18,11 +17,7 @@ public class SignUpRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(max = 20, message = "Password must be at most 20 characters long")
-    @Pattern(
-        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9])\\S{8,20}$",
-        message = "Password must be between 8 and 20 characters long, containing at least one uppercase letter, one lowercase letter, one number, and one special character, and must not contain spaces"
-    )
+    @ValidPassword
     private String password;
 
     @NotBlank(message = "Full name is required")
@@ -30,3 +25,4 @@ public class SignUpRequest {
 
     private String phone;
 }
+

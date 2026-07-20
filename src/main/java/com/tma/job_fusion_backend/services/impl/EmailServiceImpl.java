@@ -78,7 +78,6 @@ public class EmailServiceImpl implements EmailService {
         Context context = new Context();
         context.setVariable("adminName", dto.getAdminName());
         context.setVariable("tenantName", dto.getTenantName());
-        context.setVariable("dashboardImageUrl", dto.getDashboardImageUrl());
         context.setVariable("adminEmail", dto.getToEmail());
         context.setVariable("adminPassword", dto.getAdminPassword());
         context.setVariable("role", dto.getRole());
@@ -126,7 +125,6 @@ public class EmailServiceImpl implements EmailService {
                     .put("type", "text/html")
                     .put("value", htmlBody));
             payload.set("content", contentArray);
-
             String requestBody = objectMapper.writeValueAsString(payload);
 
             HttpRequest httpRequest = HttpRequest.newBuilder()

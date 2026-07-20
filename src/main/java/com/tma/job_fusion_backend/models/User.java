@@ -52,6 +52,12 @@ public class User extends BaseEntity {
     @Column(name = "activated_date")
     private LocalDateTime activatedDate;
 
+    @Column(name = "require_password_change")
+    private Boolean requirePasswordChange = false;
+
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id")
     private Tenant tenant;

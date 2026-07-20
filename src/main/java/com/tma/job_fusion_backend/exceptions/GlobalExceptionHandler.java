@@ -3,6 +3,7 @@ package com.tma.job_fusion_backend.exceptions;
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,9 +25,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
         String errorMsg = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
                 .collect(Collectors.joining("; "));
-        return ResponseUtil.error(HttpStatus.BAD_REQUEST, "Validation failed: " + errorMsg);
+        return ResponseUtil.error(HttpStatus.BAD_REQUEST, errorMsg);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

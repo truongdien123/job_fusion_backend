@@ -30,4 +30,5 @@ public class UserResponse {
     private UUID planId;
     private LocalDateTime createdAt;
     private String officeLocation;
+    private Boolean requirePasswordChange;
 }

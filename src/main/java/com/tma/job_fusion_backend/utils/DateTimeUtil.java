@@ -12,4 +12,11 @@ public final class DateTimeUtil {
     public static LocalDateTime nowUtc() {
         return LocalDateTime.now(ZoneOffset.UTC);
     }
+
+    public static long toEpochMilli(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return 0L;
+        }
+        return localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+    }
 }

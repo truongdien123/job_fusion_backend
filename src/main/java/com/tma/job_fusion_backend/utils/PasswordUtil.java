@@ -1,5 +1,10 @@
 package com.tma.job_fusion_backend.utils;
 
+import com.tma.job_fusion_backend.annotations.ValidPassword;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import org.apache.commons.lang3.StringUtils;
+
 import java.security.SecureRandom;
 
 public final class PasswordUtil {
@@ -40,4 +45,51 @@ public final class PasswordUtil {
 
         return new String(chars);
     }
+
+    public static String validatePassword(String password) {
+        if (StringUtils.isEmpty(password)) {
+            return null; // Let @NotBlank handle null/blank fields
+        }
+
+        if (password.length() < 8 || password.length() > 20) {
+            return "Password must be between 8 and 20 characters long";
+        }
+
+        if (password.matches(".*\\s.*")) {
+            return "Password must not contain spaces";
+        }
+
+        if (!password.matches(".*[a-z].*")) {
+            return "Password must contain at least one lowercase letter";
+        }
+
+        if (!password.matches(".*[A-Z].*")) {
+            return "Password must contain at least one uppercase letter";
+        }
+
+        if (!password.matches(".*\\d.*")) {
+            return "Password must contain at least one number";
+        }
+
+        if (!password.matches(".*[^a-zA-Z0-9].*")) {
+            return "Password must contain at least one special character";
+        }
+
+        return null; // Valid
+    }
+
+    public static class PasswordValidator implements ConstraintValidator<ValidPassword, String> {
+        @Override
+        public boolean isValid(String password, ConstraintValidatorContext context) {
+            String errorMsg = validatePassword(password);
+            if (errorMsg != null) {
+                context.disableDefaultConstraintViolation();
+                context.buildConstraintViolationWithTemplate(errorMsg)
+                       .addConstraintViolation();
+                return false;
+            }
+            return true;
+        }
+    }
 }
+

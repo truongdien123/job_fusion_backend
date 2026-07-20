@@ -84,6 +84,7 @@ public class TenantServiceImpl implements TenantService {
         adminUser.setType(UserType.TENANT);
         adminUser.setTenant(savedTenant);
         adminUser.setActivatedDate(DateTimeUtil.nowUtc());
+        adminUser.setRequirePasswordChange(true);
         adminUser.setCreatedBy(jwtUtil.getCurrentUserId());
 
         User savedAdminUser = userRepository.save(adminUser);

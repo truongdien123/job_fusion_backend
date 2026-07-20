@@ -4,6 +4,7 @@ import com.tma.job_fusion_backend.enums.TenantStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.UUID;
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class TenantRequest {
 
     @NotBlank(message = "Company name is required")
+    @Size(max = 255, message = "Company name must not exceed 255 characters")
     private String companyName;
 
     private String domain;
