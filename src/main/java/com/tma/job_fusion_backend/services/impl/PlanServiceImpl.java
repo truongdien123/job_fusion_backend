@@ -7,7 +7,9 @@ import com.tma.job_fusion_backend.mappers.PlanMapper;
 import com.tma.job_fusion_backend.models.Plan;
 import com.tma.job_fusion_backend.pojo.requests.PlanRequest;
 import com.tma.job_fusion_backend.pojo.responses.PlanResponse;
+import com.tma.job_fusion_backend.pojo.dtos.PlanFilter;
 import com.tma.job_fusion_backend.repositories.PlanRepository;
+import com.tma.job_fusion_backend.repositories.query.PlanQueryRepository;
 import com.tma.job_fusion_backend.services.PlanService;
 import com.tma.job_fusion_backend.utils.JsonUtil;
 import com.tma.job_fusion_backend.utils.JwtUtil;
@@ -25,6 +27,7 @@ import java.util.UUID;
 public class PlanServiceImpl implements PlanService {
 
     private final PlanRepository planRepository;
+    private final PlanQueryRepository planQueryRepository;
     private final PlanMapper planMapper;
     private final JwtUtil jwtUtil;
 
@@ -47,8 +50,9 @@ public class PlanServiceImpl implements PlanService {
     }
 
     @Override
-    public Page<PlanResponse> getListPlan(Pageable pageable) {
-        return planRepository.findAll(pageable).map(this::buildResponse);
+    @Transactional(readOnly = true)
+    public Page<PlanResponse> getListPlan(PlanFilter filter, Pageable pageable) {
+        return planQueryRepository.findAllPlans(filter, pageable).map(this::buildResponse);
     }
 
     @Override

@@ -17,6 +17,7 @@ import com.tma.job_fusion_backend.repositories.*;
 import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.repositories.query.UserQueryRepository;
 import com.tma.job_fusion_backend.repositories.query.UserTokenQueryRepository;
+import com.tma.job_fusion_backend.pojo.dtos.StaffFilter;
 import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.services.UserService;
@@ -125,11 +126,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<UserResponse> getListStaff(PagingRequest<?> request) {
+    public PageResponse<UserResponse> getListStaff(PagingRequest<StaffFilter> request) {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
         UUID tenantId = getRequiredTenantId(currentUser);
 
-        Page<User> staffPage = userQueryRepository.findStaffByTenantId(tenantId, RoleConstant.TENANT_ADMIN, request.toPageable());
+        StaffFilter filter = ObjectUtils.isNotEmpty(request) ? request.getFilters() : null;
+        Page<User> staffPage = userQueryRepository.findStaffByTenantId(tenantId, RoleConstant.TENANT_ADMIN, filter, request.toPageable());
         Page<UserResponse> mappedPage = staffPage.map(user -> {
             UserResponse response = userMapper.toUserResponse(user);
             response.setUserRole(UserUtil.resolveUserRole(user, userRoleRepository));

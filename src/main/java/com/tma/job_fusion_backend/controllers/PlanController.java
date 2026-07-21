@@ -4,6 +4,7 @@ import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import jakarta.validation.Valid;
+import com.tma.job_fusion_backend.pojo.dtos.PlanFilter;
 import com.tma.job_fusion_backend.pojo.requests.PlanRequest;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
@@ -36,9 +37,10 @@ public class PlanController {
 
     @PostMapping(EndpointConstant.ENDPOINT_LIST)
     @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
-    public ResponseEntity<?> getListPlan(@RequestBody PagingRequest<?> request) {
+    public ResponseEntity<?> getListPlan(@RequestBody PagingRequest<PlanFilter> request) {
         Pageable pageable = request.toPageable();
-        Page<PlanResponse> listPlan = planService.getListPlan(pageable);
+        PlanFilter filter = request.getFilters();
+        Page<PlanResponse> listPlan = planService.getListPlan(filter, pageable);
         return ResponseUtil.success("Get plans successfully", PageResponse.of(listPlan));
     }
 

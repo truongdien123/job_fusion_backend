@@ -27,7 +27,7 @@ public class PagingRequest<T> {
 
         Sort.Direction direction = sortBy != null ? sortBy : Sort.Direction.ASC;
         if (!StringUtils.hasText(sortField)) {
-            return PageRequest.of(adjustedPage, adjustedSize, Sort.by(Sort.Direction.DESC, FieldConstant.UPDATED_AT));
+            return PageRequest.of(adjustedPage, adjustedSize, Sort.by(Sort.Direction.DESC, FieldConstant.CREATED_AT));
         }
         return PageRequest.of(adjustedPage, adjustedSize, Sort.by(direction, sortField));
     }

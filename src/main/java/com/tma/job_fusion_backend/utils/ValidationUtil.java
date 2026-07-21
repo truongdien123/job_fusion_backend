@@ -1,11 +1,18 @@
 package com.tma.job_fusion_backend.utils;
 
 import com.tma.job_fusion_backend.commons.ErrorCode;
+import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.components.UserPrincipal;
+import com.tma.job_fusion_backend.enums.TenantStatus;
+import com.tma.job_fusion_backend.enums.UserStatus;
+import com.tma.job_fusion_backend.exceptions.NotActiveException;
 import com.tma.job_fusion_backend.exceptions.NotFoundException;
 import com.tma.job_fusion_backend.models.Plan;
 import com.tma.job_fusion_backend.models.Tenant;
+import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.repositories.PlanRepository;
+import com.tma.job_fusion_backend.repositories.TenantRepository;
+import com.tma.job_fusion_backend.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.security.access.AccessDeniedException;
@@ -19,13 +26,34 @@ public class ValidationUtil {
 
     private final JwtUtil jwtUtil;
     private final PlanRepository planRepository;
+    private final TenantRepository tenantRepository;
+    private final UserRepository userRepository;
 
     public UserPrincipal getRequiredCurrentUser() {
         UserPrincipal currentUser = jwtUtil.getCurrentUser();
         if (ObjectUtils.isEmpty(currentUser)) {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
+        validateUserAndTenantActive(currentUser);
         return currentUser;
+    }
+
+    public void validateUserAndTenantActive(UserPrincipal principal) {
+        if (ObjectUtils.isEmpty(principal)) {
+            return;
+        }
+
+        if (principal.getTenantId() != null && !principal.hasRole(RoleConstant.SUPER_ADMIN)) {
+            Tenant tenant = tenantRepository.findById(principal.getTenantId()).orElse(null);
+            if (ObjectUtils.isEmpty(tenant) || tenant.getStatus() != TenantStatus.ACTIVE || tenant.getDeletedAt() != null) {
+                throw new NotActiveException(ErrorCode.TENANT_INACTIVE);
+            }
+        }
+
+        User user = userRepository.findById(principal.getId()).orElse(null);
+        if (ObjectUtils.isEmpty(user) || user.getStatus() != UserStatus.ACTIVE || user.getDeletedAt() != null) {
+            throw new NotActiveException(ErrorCode.INACTIVE_USER);
+        }
     }
 
     public void validateAndSetPlan(Tenant tenant, UUID planId) {
@@ -40,3 +68,4 @@ public class ValidationUtil {
         }
     }
 }
+
