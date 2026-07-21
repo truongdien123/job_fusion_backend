@@ -64,11 +64,9 @@ public class UserQueryRepository {
                                         .and(qUserRole.deletedAt.isNull()))
                 ));
 
-        Long count = queryFactory.select(qUser.count())
+        return queryFactory.select(qUser.count())
                 .from(qUser)
                 .where(predicate)
                 .fetchOne();
-
-        return count != null ? count : 0L;
     }
 }
