@@ -95,7 +95,7 @@ public class UserServiceImpl implements UserService {
         // Map request to User entity
         User staff = userMapper.toEntity(request);
         staff.setPassword(passwordEncoder.encode(password));
-        staff.setStatus(UserStatus.PENDING);
+        staff.setStatus(UserStatus.ACTIVE);
         staff.setType(UserType.TENANT);
         staff.setTenant(tenant);
         staff.setActivatedDate(DateTimeUtil.nowUtc());

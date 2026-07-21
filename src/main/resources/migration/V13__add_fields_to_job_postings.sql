@@ -1,0 +1,5 @@
+ALTER TABLE job_postings
+    ADD COLUMN IF NOT EXISTS employment_type VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS location_type VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS location VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS application_deadline TIMESTAMP;

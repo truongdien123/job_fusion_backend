@@ -22,6 +22,7 @@ import com.tma.job_fusion_backend.mappers.TenantMapper;
 import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -63,6 +64,8 @@ public class TenantServiceImpl implements TenantService {
         if (userRepository.existsByEmail(request.getAdminEmail())) {
             throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
+
+        validateCompanyNameUniqueness(request.getCompanyName(), null);
 
         Plan plan = planRepository.findById(request.getPlanId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
@@ -153,6 +156,11 @@ public class TenantServiceImpl implements TenantService {
             }
         }
 
+        if (StringUtils.isNotEmpty(request.getCompanyName()) && 
+            !request.getCompanyName().trim().equalsIgnoreCase(tenant.getCompanyName())) {
+            validateCompanyNameUniqueness(request.getCompanyName(), id);
+        }
+
         validationUtil.validateAndSetPlan(tenant, request.getPlanId());
 
         if (ObjectUtils.isNotEmpty(request.getStatus())) {
@@ -202,5 +210,19 @@ public class TenantServiceImpl implements TenantService {
     private Tenant findTenantById(UUID id) {
         return tenantQueryRepository.findTenantWithDeletedAtIsNull(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
+    }
+
+    private void validateCompanyNameUniqueness(String companyName, UUID excludeId) {
+        if (StringUtils.isEmpty(companyName)) {
+            return;
+        }
+        String trimmedName = companyName.trim();
+        boolean exists = (ObjectUtils.isEmpty(excludeId))
+                ? tenantRepository.existsByCompanyNameIgnoreCaseAndDeletedAtIsNull(trimmedName)
+                : tenantRepository.existsByCompanyNameIgnoreCaseAndIdNotAndDeletedAtIsNull(trimmedName, excludeId);
+
+        if (exists) {
+            throw new BadRequestException(ErrorCode.COMPANY_NAME_ALREADY_EXISTS);
+        }
     }
 }
