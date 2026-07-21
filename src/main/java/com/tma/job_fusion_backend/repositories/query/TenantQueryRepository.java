@@ -134,7 +134,7 @@ public class TenantQueryRepository {
     public Double calculateTotalRevenue() {
         QTenant qTenant = QTenant.tenant;
 
-        // get monthly price of each tenant using projection constructor
+        // get monthly price of active tenants using projection constructor
         List<TenantRevenueProjection> results = queryFactory.select(Projections.constructor(
                         TenantRevenueProjection.class,
                         qTenant.createdAt,
@@ -142,6 +142,8 @@ public class TenantQueryRepository {
                         qTenant.plan.monthlyPrice
                 ))
                 .from(qTenant)
+                .where(qTenant.deletedAt.isNull()
+                        .and(qTenant.status.eq(TenantStatus.ACTIVE)))
                 .fetch();
 
         double totalRevenue = 0.0;
@@ -149,14 +151,11 @@ public class TenantQueryRepository {
 
         for (TenantRevenueProjection projection : results) {
             LocalDateTime createdAt = projection.getCreatedAt();
-            LocalDateTime deletedAt = projection.getDeletedAt();
             Double monthlyPrice = projection.getMonthlyPrice();
 
             if (createdAt != null && monthlyPrice != null) {
-                LocalDateTime endDate = deletedAt != null ? deletedAt : now;
-
-                // calculate number of months from when creating tenant to end date
-                long months = Math.max(1, ChronoUnit.MONTHS.between(createdAt, endDate) + 1);
+                // calculate number of months from when creating tenant to now
+                long months = Math.max(1, ChronoUnit.MONTHS.between(createdAt, now) + 1);
                 totalRevenue += months * monthlyPrice;
             }
         }
