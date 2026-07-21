@@ -1,8 +1,12 @@
 package com.tma.job_fusion_backend.models;
 
+import com.tma.job_fusion_backend.enums.EmploymentType;
 import com.tma.job_fusion_backend.enums.JobStatus;
+import com.tma.job_fusion_backend.enums.LocationType;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "job_postings", indexes = {
@@ -23,6 +27,19 @@ public class JobPosting extends BaseEntity {
     private String department;
 
     private String level;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "employment_type")
+    private EmploymentType employmentType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "location_type")
+    private LocationType locationType;
+
+    private String location;
+
+    @Column(name = "application_deadline")
+    private LocalDateTime applicationDeadline;
 
     @Column(columnDefinition = "TEXT")
     private String description;

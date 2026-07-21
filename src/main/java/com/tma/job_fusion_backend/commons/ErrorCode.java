@@ -21,4 +21,9 @@ public final class ErrorCode {
     public static final String MAX_STAFF_LIMIT_REACHED = "max_staff_limit_reached";
     public static final String STAFF_ALREADY_ACTIVE = "staff_already_active_or_disabled";
     public static final String TENANT_INACTIVE = "tenant_is_inactive";
+    public static final String MAX_JOB_POSTING_LIMIT_REACHED = "max_job_posting_limit_reached";
+    public static final String JOB_POSTING_NOT_FOUND = "job_posting_not_found";
+    public static final String JOB_TITLE_ALREADY_EXISTS = "job_title_already_exists";
+    public static final String INVALID_SALARY_RANGE = "salary_max_must_be_greater_than_or_equal_to_salary_min";
+    public static final String COMPANY_NAME_ALREADY_EXISTS = "company_name_already_exists";
 }

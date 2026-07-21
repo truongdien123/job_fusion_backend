@@ -11,4 +11,8 @@ import java.util.UUID;
 @Repository
 public interface TenantRepository extends JpaRepository<Tenant, UUID> {
     Page<Tenant> findAllByDeletedAtIsNull(Pageable pageable);
+
+    boolean existsByCompanyNameIgnoreCaseAndDeletedAtIsNull(String companyName);
+
+    boolean existsByCompanyNameIgnoreCaseAndIdNotAndDeletedAtIsNull(String companyName, UUID id);
 }
