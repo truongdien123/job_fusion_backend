@@ -12,7 +12,7 @@ public interface TenantMapper {
 
     @Mapping(target = "planId", source = "tenant.plan.id")
     @Mapping(target = "planName", source = "tenant.plan.name")
-    @Mapping(target = "maxUsers", source = "tenant.plan.maxStaffAccount")
+    @Mapping(target = "maxUsers", source = "tenant.maxStaffAccount")
     @Mapping(target = "adminUserId", source = "adminUserId")
     @Mapping(target = "id", source = "tenant.id")
     @Mapping(target = "activeUsers", source = "activeUsers")

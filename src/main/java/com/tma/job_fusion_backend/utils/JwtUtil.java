@@ -32,9 +32,6 @@ public class JwtUtil {
 
     private JWTVerifier jwtVerifier;
 
-    @Value("${app.activation}")
-    private String activationLink;
-
     @PostConstruct
     public void init() {
         this.algorithm = Algorithm.HMAC256(secret);
@@ -67,18 +64,6 @@ public class JwtUtil {
         return builder.withIssuedAt(new Date())
                 .withExpiresAt(new Date(System.currentTimeMillis() + jwtRefreshExpiration))
                 .sign(Algorithm.HMAC256(secret));
-    }
-
-    public String getActivationUrl(String token) {
-        return activationLink + "?token=" + token;
-    }
-
-    public String getActivationUrl() {
-        return getActivationUrl(getActivationToken());
-    }
-
-    public String getActivationToken() {
-        return UUID.randomUUID().toString();
     }
 
     public DecodedJWT validateToken(String token) {

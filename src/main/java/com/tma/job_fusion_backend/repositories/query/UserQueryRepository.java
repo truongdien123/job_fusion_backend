@@ -49,4 +49,24 @@ public class UserQueryRepository {
 
         return new PageImpl<>(users, pageable, total);
     }
+
+    @Transactional(readOnly = true)
+    public long countStaffByTenantId(UUID tenantId, String excludeRole) {
+        QUser qUser = QUser.user;
+        QUserRole qUserRole = QUserRole.userRole;
+
+        BooleanExpression predicate = qUser.tenant.id.eq(tenantId)
+                .and(qUser.deletedAt.isNull())
+                .and(qUser.id.notIn(
+                        JPAExpressions.select(qUserRole.user.id)
+                                .from(qUserRole)
+                                .where(qUserRole.role.name.eq(excludeRole)
+                                        .and(qUserRole.deletedAt.isNull()))
+                ));
+
+        return queryFactory.select(qUser.count())
+                .from(qUser)
+                .where(predicate)
+                .fetchOne();
+    }
 }

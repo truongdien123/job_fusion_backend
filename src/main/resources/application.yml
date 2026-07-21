@@ -34,4 +34,4 @@ app:
     password: ${ADMIN_PLATFORM_PASSWORD}
   otp:
     expire-minutes: 5
-  activation: ${ACTIVATION_LINK}
+  login: ${LOGIN_LINK}

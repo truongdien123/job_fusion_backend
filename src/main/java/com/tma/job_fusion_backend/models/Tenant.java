@@ -33,6 +33,12 @@ public class Tenant extends BaseEntity {
     @JoinColumn(name = "plan_id")
     private Plan plan;
 
+    @Column(name = "max_staff_account")
+    private Integer maxStaffAccount;
+
+    @Column(name = "max_active_job_posting")
+    private Integer maxActiveJobPosting;
+
     @Column(name = "expiration_date")
     private LocalDateTime expirationDate;
 

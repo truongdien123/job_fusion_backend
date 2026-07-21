@@ -13,6 +13,7 @@ import com.tma.job_fusion_backend.pojo.dtos.TenantFilter;
 import com.tma.job_fusion_backend.pojo.responses.TenantResponse;
 import com.tma.job_fusion_backend.repositories.*;
 import com.tma.job_fusion_backend.repositories.query.TenantQueryRepository;
+import com.tma.job_fusion_backend.repositories.query.UserQueryRepository;
 import com.tma.job_fusion_backend.repositories.query.UserRoleQueryRepository;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.services.TenantService;
@@ -38,8 +39,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TenantServiceImpl implements TenantService {
 
-    @Value("${app.activation}")
-    private String activationLink;
+    @Value("${app.login}")
+    private String loginLink;
 
     private final TenantRepository tenantRepository;
     private final UserRepository userRepository;
@@ -52,6 +53,7 @@ public class TenantServiceImpl implements TenantService {
     private final JwtUtil jwtUtil;
     private final TenantMapper tenantMapper;
     private final TenantQueryRepository tenantQueryRepository;
+    private final UserQueryRepository userQueryRepository;
     private final UserRoleQueryRepository userRoleQueryRepository;
     private final ValidationUtil validationUtil;
 
@@ -68,9 +70,11 @@ public class TenantServiceImpl implements TenantService {
         Tenant tenant = tenantMapper.toEntity(request);
         tenant.setStatus(TenantStatus.ACTIVE);
         tenant.setPlan(plan);
+        tenant.setMaxStaffAccount(plan.getMaxStaffAccount());
+        tenant.setMaxActiveJobPosting(plan.getMaxActiveJobPosting());
         tenant.setCreatedBy(jwtUtil.getCurrentUserId());
         tenant.setExpirationDate(DateTimeUtil.nowUtc().plusMonths(1));
-        tenant.setCompanySize(1);
+        tenant.setCompanySize(0);
 
         Tenant savedTenant = tenantRepository.save(tenant);
 
@@ -80,7 +84,7 @@ public class TenantServiceImpl implements TenantService {
         adminUser.setEmail(request.getAdminEmail());
         adminUser.setPassword(passwordEncoder.encode(generatedPassword));
         adminUser.setFullName(request.getAdminFullName());
-        adminUser.setStatus(UserStatus.PENDING);
+        adminUser.setStatus(UserStatus.ACTIVE);
         adminUser.setType(UserType.TENANT);
         adminUser.setTenant(savedTenant);
         adminUser.setActivatedDate(DateTimeUtil.nowUtc());
@@ -98,21 +102,18 @@ public class TenantServiceImpl implements TenantService {
         userRole.setCreatedBy(jwtUtil.getCurrentUserId());
         userRoleRepository.save(userRole);
 
-        String token = UserUtil.createAndSaveUserRole(adminUser, jwtUtil, userTokenRepository);
-
         emailService.sendTenantCreatedEmail(
                 TenantCreatedEmailDto.builder()
                         .toEmail(savedAdminUser.getEmail())
                         .adminName(savedAdminUser.getFullName())
                         .tenantName(savedTenant.getCompanyName())
-                        .dashboardImageUrl(null)
                         .adminPassword(generatedPassword)
                         .role(RoleConstant.TENANT_ADMIN)
-                        .activationUrl(jwtUtil.getActivationUrl(token))
+                        .loginUrl(loginLink)
                         .build()
         );
 
-        return tenantMapper.toTenantResponse(savedTenant, savedAdminUser.getId(), 1L);
+        return tenantMapper.toTenantResponse(savedTenant, savedAdminUser.getId(), 0L);
     }
 
     @Override
@@ -128,7 +129,7 @@ public class TenantServiceImpl implements TenantService {
 
         UUID adminUserId = getAdminUserId(tenant.getId());
 
-        long activeUsers = userRepository.countByTenantIdAndDeletedAtIsNull(tenant.getId());
+        long activeUsers = userQueryRepository.countStaffByTenantId(tenant.getId(), RoleConstant.TENANT_ADMIN);
         return tenantMapper.toTenantResponse(tenant, adminUserId, activeUsers);
     }
 
@@ -165,7 +166,7 @@ public class TenantServiceImpl implements TenantService {
 
         UUID adminUserId = getAdminUserId(savedTenant.getId());
 
-        long activeUsers = userRepository.countByTenantIdAndDeletedAtIsNull(savedTenant.getId());
+        long activeUsers = userQueryRepository.countStaffByTenantId(savedTenant.getId(), RoleConstant.TENANT_ADMIN);
         return tenantMapper.toTenantResponse(savedTenant, adminUserId, activeUsers);
     }
 

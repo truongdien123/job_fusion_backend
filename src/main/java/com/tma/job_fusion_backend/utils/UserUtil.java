@@ -57,18 +57,6 @@ public final class UserUtil {
         }
     }
 
-    public static String createAndSaveUserRole(User user, JwtUtil jwtUtil, UserTokenRepository userTokenRepository) {
-        UserToken activationToken = new UserToken();
-        activationToken.setUser(user);
-        String token = jwtUtil.getActivationToken();
-        activationToken.setToken(token);
-        activationToken.setTokenType(TokenType.ACTIVATION);
-        activationToken.setExpiredAt(DateTimeUtil.nowUtc().plusDays(7));
-        activationToken.setUsed(false);
-        userTokenRepository.save(activationToken);
-        return token;
-    }
-
     private static boolean isSameTenant(UserPrincipal currentUser, User targetUser) {
         if (ObjectUtils.isEmpty(currentUser.getTenantId()) || ObjectUtils.isEmpty(targetUser.getTenant())) {
             return false;

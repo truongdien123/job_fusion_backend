@@ -54,7 +54,13 @@ public class TenantQueryRepository {
         JPQLQuery<Long> activeUsersSubquery = JPAExpressions.select(qUser.count())
                 .from(qUser)
                 .where(qUser.tenant.id.eq(qTenant.id)
-                        .and(qUser.deletedAt.isNull()));
+                        .and(qUser.deletedAt.isNull())
+                        .and(qUser.id.notIn(
+                                JPAExpressions.select(qUserRole.user.id)
+                                        .from(qUserRole)
+                                        .where(qUserRole.role.name.eq(RoleConstant.TENANT_ADMIN)
+                                                .and(qUserRole.deletedAt.isNull()))
+                        )));
 
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(qTenant.deletedAt.isNull());
@@ -79,7 +85,7 @@ public class TenantQueryRepository {
                         qTenant.plan.id,
                         qTenant.plan.name,
                         activeUsersSubquery,
-                        qTenant.plan.maxStaffAccount,
+                        qTenant.maxStaffAccount,
                         adminUserIdSubquery,
                         qTenant.expirationDate,
                         qTenant.createdAt
@@ -158,23 +164,30 @@ public class TenantQueryRepository {
     public Double calculateAverageUsage() {
         QTenant qTenant = QTenant.tenant;
         QUser qUser = QUser.user;
+        QUserRole qUserRole = QUserRole.userRole;
 
-        // count user by tenant id
+        // count user by tenant id excluding tenant admin
         JPQLQuery<Long> userCountSubquery = JPAExpressions.select(qUser.count())
                 .from(qUser)
                 .where(qUser.tenant.id.eq(qTenant.id)
-                        .and(qUser.deletedAt.isNull()));
+                        .and(qUser.deletedAt.isNull())
+                        .and(qUser.id.notIn(
+                                JPAExpressions.select(qUserRole.user.id)
+                                        .from(qUserRole)
+                                        .where(qUserRole.role.name.eq(RoleConstant.TENANT_ADMIN)
+                                                .and(qUserRole.deletedAt.isNull()))
+                        )));
 
-        // get active user and max staff of plan
+        // get active user and max staff of tenant
         List<TenantUsageProjection> results = queryFactory.select(Projections.constructor(
                         TenantUsageProjection.class,
                         userCountSubquery,
-                        qTenant.plan.maxStaffAccount
+                        qTenant.maxStaffAccount
                 ))
                 .from(qTenant)
                 .where(qTenant.status.eq(TenantStatus.ACTIVE)
                         .and(qTenant.deletedAt.isNull())
-                        .and(qTenant.plan.maxStaffAccount.gt(0)))
+                        .and(qTenant.maxStaffAccount.gt(0)))
                 .fetch();
 
         if (results.isEmpty()) {
