@@ -35,6 +35,8 @@ public class ValidationUtil {
             Plan plan = planRepository.findById(planId)
                     .orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
             tenant.setPlan(plan);
+            tenant.setMaxStaffAccount(plan.getMaxStaffAccount());
+            tenant.setMaxActiveJobPosting(plan.getMaxActiveJobPosting());
         }
     }
 }

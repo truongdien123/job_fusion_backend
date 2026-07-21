@@ -81,7 +81,7 @@ public class EmailServiceImpl implements EmailService {
         context.setVariable("adminEmail", dto.getToEmail());
         context.setVariable("adminPassword", dto.getAdminPassword());
         context.setVariable("role", dto.getRole());
-        context.setVariable("activationUrl", dto.getActivationUrl());
+        context.setVariable("loginUrl", dto.getLoginUrl());
         context.setVariable("isTenantAdmin", isTenantAdmin);
         context.setVariable("isHr", isHr);
         context.setVariable("isInterviewer", isInterviewer);

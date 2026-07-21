@@ -23,6 +23,7 @@ import com.tma.job_fusion_backend.services.UserService;
 import com.tma.job_fusion_backend.utils.*;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
+    @Value("${app.login}")
+    private String loginLink;
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
@@ -73,10 +77,10 @@ public class UserServiceImpl implements UserService {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
 
-        // Validate plan max staff account limit
-        if (tenant.getPlan() != null && tenant.getPlan().getMaxStaffAccount() != null) {
-            long currentStaffCount = userRepository.countByTenantIdAndDeletedAtIsNull(tenantId);
-            if (currentStaffCount >= tenant.getPlan().getMaxStaffAccount()) {
+        // Validate tenant max staff account limit
+        if (tenant.getMaxStaffAccount() != null) {
+            long currentStaffCount = userQueryRepository.countStaffByTenantId(tenantId, RoleConstant.TENANT_ADMIN);
+            if (currentStaffCount >= tenant.getMaxStaffAccount()) {
                 throw new BadRequestException(ErrorCode.MAX_STAFF_LIMIT_REACHED);
             }
         }
@@ -98,8 +102,6 @@ public class UserServiceImpl implements UserService {
         staff.setCreatedBy(currentUser.getId());
         staff.setEmployeeCode(UserUtil.generateEmployeeCode());
 
-        String token = UserUtil.createAndSaveUserRole(staff, jwtUtil, userTokenRepository);
-
         User savedStaff = userRepository.save(staff);
 
         // Find and assign requested roles
@@ -110,10 +112,9 @@ public class UserServiceImpl implements UserService {
                         .toEmail(savedStaff.getEmail())
                         .adminName(savedStaff.getFullName())
                         .tenantName(tenant.getCompanyName())
-                        .activationUrl(jwtUtil.getActivationUrl(token))
-                        .dashboardImageUrl(null)
                         .adminPassword(password)
                         .role(String.join(", ", request.getRole()))
+                        .loginUrl(loginLink)
                         .build()
         );
 
@@ -255,9 +256,6 @@ public class UserServiceImpl implements UserService {
         staff.setRequirePasswordChange(true);
         userRepository.save(staff);
 
-        // Generate new activation token
-        String token = UserUtil.createAndSaveUserRole(staff, jwtUtil, userTokenRepository);
-
         // Fetch user roles
         String resolvedRole = UserUtil.resolveUserRole(staff, userRoleRepository);
 
@@ -267,10 +265,9 @@ public class UserServiceImpl implements UserService {
                         .toEmail(staff.getEmail())
                         .adminName(staff.getFullName())
                         .tenantName(staff.getTenant().getCompanyName())
-                        .activationUrl(jwtUtil.getActivationUrl(token))
-                        .dashboardImageUrl(null)
                         .adminPassword(newPassword)
                         .role(resolvedRole)
+                        .loginUrl(loginLink)
                         .build()
         );
     }
