@@ -66,11 +66,24 @@ public class TenantQueryRepository {
         builder.and(qTenant.deletedAt.isNull());
 
         if (ObjectUtils.isNotEmpty(filter)) {
+            if (StringUtils.isNotEmpty(filter.getSearch())) {
+                String search = filter.getSearch().trim();
+                builder.and(qTenant.companyName.containsIgnoreCase(search)
+                        .or(qTenant.domain.containsIgnoreCase(search))
+                        .or(qTenant.industry.containsIgnoreCase(search))
+                        .or(qTenant.plan.name.containsIgnoreCase(search)));
+            }
             if (ObjectUtils.isNotEmpty(filter.getStatus())) {
                 builder.and(qTenant.status.eq(filter.getStatus()));
             }
             if (StringUtils.isNotEmpty(filter.getCompanyName())) {
                 builder.and(qTenant.companyName.containsIgnoreCase(filter.getCompanyName().trim()));
+            }
+            if (StringUtils.isNotEmpty(filter.getDomain())) {
+                builder.and(qTenant.domain.containsIgnoreCase(filter.getDomain().trim()));
+            }
+            if (StringUtils.isNotEmpty(filter.getIndustry())) {
+                builder.and(qTenant.industry.containsIgnoreCase(filter.getIndustry().trim()));
             }
         }
 
@@ -94,6 +107,7 @@ public class TenantQueryRepository {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
+                .orderBy(qTenant.createdAt.desc())
                 .fetch();
 
         Long total = queryFactory.select(qTenant.count())

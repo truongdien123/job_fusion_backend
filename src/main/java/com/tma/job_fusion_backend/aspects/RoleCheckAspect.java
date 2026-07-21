@@ -3,6 +3,7 @@ package com.tma.job_fusion_backend.aspects;
 import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.components.UserPrincipal;
 import com.tma.job_fusion_backend.utils.JwtUtil;
+import com.tma.job_fusion_backend.utils.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.aspectj.lang.JoinPoint;
@@ -21,6 +22,7 @@ import java.util.Arrays;
 public class RoleCheckAspect {
 
     private final JwtUtil jwtUtil;
+    private final ValidationUtil validationUtil;
 
     @Before("@annotation(com.tma.job_fusion_backend.annotations.RequireRoles) || @within(com.tma.job_fusion_backend.annotations.RequireRoles)")
     public void checkRole(JoinPoint joinPoint) {
@@ -49,6 +51,8 @@ public class RoleCheckAspect {
         if (ObjectUtils.isEmpty(principal)) {
             throw new AccessDeniedException("Access denied");
         }
+
+        validationUtil.validateUserAndTenantActive(principal);
 
         boolean hasRole = Arrays.stream(requireRoles.value())
                 .anyMatch(roleName -> principal.getAuthorities().stream()

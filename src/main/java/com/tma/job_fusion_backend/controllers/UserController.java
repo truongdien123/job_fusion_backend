@@ -3,6 +3,7 @@ package com.tma.job_fusion_backend.controllers;
 import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
+import com.tma.job_fusion_backend.pojo.dtos.StaffFilter;
 import jakarta.validation.Valid;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.requests.StaffRequest;
@@ -40,7 +41,7 @@ public class UserController {
 
     @PostMapping(EndpointConstant.ENDPOINT_STAFF_LIST)
     @RequireRoles(RoleConstant.TENANT_ADMIN)
-    public ResponseEntity<?> getListStaff(@RequestBody PagingRequest<?> request) {
+    public ResponseEntity<?> getListStaff(@RequestBody PagingRequest<StaffFilter> request) {
         PageResponse<UserResponse> response = userService.getListStaff(request);
         return ResponseUtil.success("Get list staff successfully", response);
     }

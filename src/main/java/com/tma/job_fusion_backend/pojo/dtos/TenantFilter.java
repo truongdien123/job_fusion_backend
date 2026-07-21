@@ -9,6 +9,9 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class TenantFilter {
+    private String search;
     private String companyName;
+    private String domain;
+    private String industry;
     private TenantStatus status;
 }
