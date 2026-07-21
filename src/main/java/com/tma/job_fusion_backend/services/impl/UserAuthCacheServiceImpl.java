@@ -5,6 +5,7 @@ import com.tma.job_fusion_backend.repositories.UserRepository;
 import com.tma.job_fusion_backend.services.UserAuthCacheService;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,7 +26,7 @@ public class UserAuthCacheServiceImpl implements UserAuthCacheService {
 
     @Override
     public Long getPasswordChangedAtMillis(UUID userId) {
-        if (userId == null) {
+        if (ObjectUtils.isEmpty(userId)) {
             return null;
         }
 
@@ -49,7 +50,7 @@ public class UserAuthCacheServiceImpl implements UserAuthCacheService {
 
     @Override
     public void updatePasswordChangedAt(UUID userId, LocalDateTime passwordChangedAt) {
-        if (userId == null) {
+        if (ObjectUtils.isEmpty(userId)) {
             return;
         }
         if (passwordChangedAt != null) {
@@ -62,7 +63,7 @@ public class UserAuthCacheServiceImpl implements UserAuthCacheService {
 
     @Override
     public void evictUser(UUID userId) {
-        if (userId != null) {
+        if (ObjectUtils.isNotEmpty(userId)) {
             passwordChangedCache.remove(userId);
         }
     }
