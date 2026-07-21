@@ -105,6 +105,11 @@ public class UserServiceImpl implements UserService {
 
         User savedStaff = userRepository.save(staff);
 
+        // Increment tenant company size
+        int currentCompanySize = tenant.getCompanySize() != null ? tenant.getCompanySize() : 0;
+        tenant.setCompanySize(currentCompanySize + 1);
+        tenantRepository.save(tenant);
+
         // Find and assign requested roles
         assignRolesToUser(savedStaff, request.getRole(), currentUser.getId(), false);
 
