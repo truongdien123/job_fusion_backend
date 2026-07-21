@@ -94,6 +94,7 @@ public class UserServiceImpl implements UserService {
         staff.setType(UserType.TENANT);
         staff.setTenant(tenant);
         staff.setActivatedDate(DateTimeUtil.nowUtc());
+        staff.setRequirePasswordChange(true);
         staff.setCreatedBy(currentUser.getId());
         staff.setEmployeeCode(UserUtil.generateEmployeeCode());
 
@@ -251,6 +252,7 @@ public class UserServiceImpl implements UserService {
         // Generate new password
         String newPassword = PasswordUtil.generateRandomPassword();
         staff.setPassword(passwordEncoder.encode(newPassword));
+        staff.setRequirePasswordChange(true);
         userRepository.save(staff);
 
         // Generate new activation token

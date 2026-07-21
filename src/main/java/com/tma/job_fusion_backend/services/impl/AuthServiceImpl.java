@@ -21,6 +21,7 @@ import com.tma.job_fusion_backend.repositories.UserRoleRepository;
 import com.tma.job_fusion_backend.repositories.query.UserTokenQueryRepository;
 import com.tma.job_fusion_backend.services.AuthService;
 import com.tma.job_fusion_backend.services.EmailService;
+import com.tma.job_fusion_backend.services.UserAuthCacheService;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.JwtUtil;
 import com.tma.job_fusion_backend.utils.UserUtil;
@@ -35,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -52,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final UserRoleRepository userRoleRepository;
     private final UserTokenQueryRepository userTokenQueryRepository;
+    private final UserAuthCacheService userAuthCacheService;
 
     @Override
     @Transactional
@@ -128,7 +131,10 @@ public class AuthServiceImpl implements AuthService {
         userTokenRepository.save(userToken);
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setRequirePasswordChange(false);
+        user.setPasswordChangedAt(DateTimeUtil.nowUtc());
         userRepository.save(user);
+        userAuthCacheService.updatePasswordChangedAt(user.getId(), user.getPasswordChangedAt());
     }
 
     @Override
@@ -156,20 +162,27 @@ public class AuthServiceImpl implements AuthService {
         UUID userId;
         try {
             decodedJWT = jwtUtil.validateToken(request.getRefreshToken());
-             userId = jwtUtil.getIdFromToken(decodedJWT);
+            userId = jwtUtil.getIdFromToken(decodedJWT);
         } catch (Exception e) {
             throw new BadRequestException(ErrorCode.INVALID_TOKEN);
         }
 
         User user = checkUserById(userId);
 
+        if (user.getPasswordChangedAt() != null) {
+            Date issuedAt = jwtUtil.getIssuedAtFromToken(decodedJWT);
+            long issuedAtMillis = issuedAt != null ? issuedAt.getTime() : 0;
+            long passwordChangedAtMillis = DateTimeUtil.toEpochMilli(user.getPasswordChangedAt());
+
+            if (issuedAtMillis < passwordChangedAtMillis) {
+                throw new BadRequestException(ErrorCode.INVALID_TOKEN);
+            }
+        }
+
         return handleUserToResponse(user);
     }
 
     private AuthResponse handleUserToResponse(User user) {
-        if (UserStatus.ACTIVE != user.getStatus()) {
-            throw new NotActiveException(ErrorCode.INACTIVE_USER);
-        }
 
         if (ObjectUtils.isNotEmpty(user.getDeletedAt())) {
             throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
@@ -193,9 +206,16 @@ public class AuthServiceImpl implements AuthService {
                 resolvedRole
         );
 
+        boolean mustChangePassword = Boolean.TRUE.equals(user.getRequirePasswordChange());
+
+        // Pre-warm RAM Cache upon authentication/login so filter never hits DB
+        userAuthCacheService.updatePasswordChangedAt(user.getId(), user.getPasswordChangedAt());
+
         UserResponse userResponse = userMapper.toUserResponse(user);
         userResponse.setUserRole(resolvedRole);
         userResponse.setPlanId(ObjectUtils.isNotEmpty(user.getTenant()) ? user.getTenant().getPlan().getId() : null);
+        userResponse.setRequirePasswordChange(mustChangePassword);
+
         return AuthResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
@@ -226,7 +246,12 @@ public class AuthServiceImpl implements AuthService {
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setRequirePasswordChange(false);
+        user.setPasswordChangedAt(DateTimeUtil.nowUtc());
         userRepository.save(user);
+        userAuthCacheService.updatePasswordChangedAt(user.getId(), user.getPasswordChangedAt());
+
+        SecurityContextHolder.clearContext();
     }
 
     private User checkUserByEmail(String email) {
