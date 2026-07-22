@@ -24,6 +24,7 @@ public class TenantResponse {
     private Long activeUsers;
     private Integer maxUsers;
     private UUID adminUserId;
+    private Double monthlyPrice;
     private LocalDateTime expirationDate;
     private LocalDateTime createdAt;
 }

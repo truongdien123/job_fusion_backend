@@ -70,6 +70,7 @@ public class TenantQueryRepository {
                         activeUsersSubquery,
                         qTenant.plan.maxStaffAccount,
                         adminUserIdSubquery,
+                        qTenant.plan.monthlyPrice,
                         qTenant.expirationDate,
                         qTenant.createdAt
                 ))

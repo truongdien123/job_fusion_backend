@@ -24,13 +24,13 @@ public class PlanRequest {
     @DecimalMin(value = "0.0", inclusive = true, message = "Monthly price must be greater than or equal to 0")
     private Double monthlyPrice;
 
-    @Min(value = 0, message = "Max staff account must be greater than or equal to 0")
+    @Min(value = 1, message = "Max staff account must be greater than or equal to 1")
     private Integer maxStaffAccount;
 
     @NotNull(message = "Staff account unlimited flag is required")
     private Boolean staffAccountUnlimited;
 
-    @Min(value = 0, message = "Max active job posting must be greater than or equal to 0")
+    @Min(value = 1, message = "Max active job posting must be greater than or equal to 1")
     private Integer maxActiveJobPosting;
 
     @NotNull(message = "Active job posting unlimited flag is required")

@@ -17,6 +17,7 @@ public interface TenantMapper {
     @Mapping(target = "adminUserId", source = "adminUserId")
     @Mapping(target = "id", source = "tenant.id")
     @Mapping(target = "activeUsers", source = "activeUsers")
+    @Mapping(target = "monthlyPrice", source = "tenant.plan.monthlyPrice")
     TenantResponse toTenantResponse(Tenant tenant, UUID adminUserId, Long activeUsers);
 
     @Mapping(target = "id", ignore = true)
