@@ -9,6 +9,8 @@ import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.enums.TenantStatus;
+import com.tma.job_fusion_backend.enums.JobStatus;
+import com.tma.job_fusion_backend.models.QJobPosting;
 import com.tma.job_fusion_backend.models.QTenant;
 import com.tma.job_fusion_backend.models.QUser;
 import com.tma.job_fusion_backend.models.QUserRole;
@@ -62,6 +64,13 @@ public class TenantQueryRepository {
                                                 .and(qUserRole.deletedAt.isNull()))
                         )));
 
+        QJobPosting qJobPosting = QJobPosting.jobPosting;
+        JPQLQuery<Long> activeJobSubquery = JPAExpressions.select(qJobPosting.count())
+                .from(qJobPosting)
+                .where(qJobPosting.tenant.id.eq(qTenant.id)
+                        .and(qJobPosting.status.eq(JobStatus.OPEN))
+                        .and(qJobPosting.deletedAt.isNull()));
+
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(qTenant.deletedAt.isNull());
 
@@ -85,6 +94,9 @@ public class TenantQueryRepository {
             if (StringUtils.isNotEmpty(filter.getIndustry())) {
                 builder.and(qTenant.industry.containsIgnoreCase(filter.getIndustry().trim()));
             }
+            if (ObjectUtils.isNotEmpty(filter.getPlanId())) {
+                builder.and(qTenant.plan.id.eq(filter.getPlanId()));
+            }
         }
 
         List<TenantResponse> content = queryFactory.select(Projections.constructor(TenantResponse.class,
@@ -100,6 +112,8 @@ public class TenantQueryRepository {
                         activeUsersSubquery,
                         qTenant.maxStaffAccount,
                         adminUserIdSubquery,
+                        activeJobSubquery,
+                        qTenant.maxActiveJobPosting,
                         qTenant.plan.monthlyPrice,
                         qTenant.expirationDate,
                         qTenant.createdAt
