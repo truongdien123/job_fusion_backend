@@ -4,6 +4,7 @@ import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.enums.TenantStatus;
 import com.tma.job_fusion_backend.enums.TokenType;
+import com.tma.job_fusion_backend.enums.JobStatus;
 import com.tma.job_fusion_backend.enums.UserStatus;
 import com.tma.job_fusion_backend.enums.UserType;
 import com.tma.job_fusion_backend.exceptions.*;
@@ -57,6 +58,7 @@ public class TenantServiceImpl implements TenantService {
     private final UserQueryRepository userQueryRepository;
     private final UserRoleQueryRepository userRoleQueryRepository;
     private final ValidationUtil validationUtil;
+    private final JobPostingRepository jobPostingRepository;
 
     @Override
     @Transactional
@@ -116,7 +118,7 @@ public class TenantServiceImpl implements TenantService {
                         .build()
         );
 
-        return tenantMapper.toTenantResponse(savedTenant, savedAdminUser.getId(), 0L);
+        return tenantMapper.toTenantResponse(savedTenant, savedAdminUser.getId(), 0L, 0L);
     }
 
     @Override
@@ -133,7 +135,8 @@ public class TenantServiceImpl implements TenantService {
         UUID adminUserId = getAdminUserId(tenant.getId());
 
         long activeUsers = userQueryRepository.countStaffByTenantId(tenant.getId(), RoleConstant.TENANT_ADMIN);
-        return tenantMapper.toTenantResponse(tenant, adminUserId, activeUsers);
+        long activeJob = jobPostingRepository.countByTenantIdAndStatusAndDeletedAtIsNull(tenant.getId(), JobStatus.OPEN);
+        return tenantMapper.toTenantResponse(tenant, adminUserId, activeUsers, activeJob);
     }
 
     @Override
@@ -175,7 +178,8 @@ public class TenantServiceImpl implements TenantService {
         UUID adminUserId = getAdminUserId(savedTenant.getId());
 
         long activeUsers = userQueryRepository.countStaffByTenantId(savedTenant.getId(), RoleConstant.TENANT_ADMIN);
-        return tenantMapper.toTenantResponse(savedTenant, adminUserId, activeUsers);
+        long activeJob = jobPostingRepository.countByTenantIdAndStatusAndDeletedAtIsNull(savedTenant.getId(), JobStatus.OPEN);
+        return tenantMapper.toTenantResponse(savedTenant, adminUserId, activeUsers, activeJob);
     }
 
     @Override
