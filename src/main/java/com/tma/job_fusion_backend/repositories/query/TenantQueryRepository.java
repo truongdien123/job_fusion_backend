@@ -268,11 +268,12 @@ public class TenantQueryRepository {
     @Transactional(readOnly = true)
     public Double calculateMonthlyActivePlanRevenue() {
         QTenant qTenant = QTenant.tenant;
-        return queryFactory.select(qTenant.plan.monthlyPrice.sum())
+        Double sum = queryFactory.select(qTenant.plan.monthlyPrice.sum())
                 .from(qTenant)
                 .where(qTenant.status.eq(TenantStatus.ACTIVE)
                         .and(qTenant.deletedAt.isNull()))
                 .fetchOne();
+        return sum != null ? sum : 0.0;
     }
 
     @Transactional(readOnly = true)
@@ -285,11 +286,12 @@ public class TenantQueryRepository {
                 .withSecond(0)
                 .withNano(0);
 
-        return queryFactory.select(qTenant.plan.monthlyPrice.sum())
+        Double sum = queryFactory.select(qTenant.plan.monthlyPrice.sum())
                 .from(qTenant)
                 .where(qTenant.status.eq(TenantStatus.ACTIVE)
                         .and(qTenant.createdAt.lt(startOfCurrentMonth))
                         .and(qTenant.deletedAt.isNull().or(qTenant.deletedAt.goe(startOfCurrentMonth))))
                 .fetchOne();
+        return sum != null ? sum : 0.0;
     }
 }
