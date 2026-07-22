@@ -252,4 +252,44 @@ public class TenantQueryRepository {
 
         return ((double) churnedTenants / totalTenants) * 100.0;
     }
+
+    @Transactional(readOnly = true)
+    public Long countActiveSubscribersByPlanId(UUID planId) {
+        QTenant qTenant = QTenant.tenant;
+        Long count = queryFactory.select(qTenant.count())
+                .from(qTenant)
+                .where(qTenant.plan.id.eq(planId)
+                        .and(qTenant.status.eq(TenantStatus.ACTIVE))
+                        .and(qTenant.deletedAt.isNull()))
+                .fetchOne();
+        return count != null ? count : 0L;
+    }
+
+    @Transactional(readOnly = true)
+    public Double calculateMonthlyActivePlanRevenue() {
+        QTenant qTenant = QTenant.tenant;
+        return queryFactory.select(qTenant.plan.monthlyPrice.sum())
+                .from(qTenant)
+                .where(qTenant.status.eq(TenantStatus.ACTIVE)
+                        .and(qTenant.deletedAt.isNull()))
+                .fetchOne();
+    }
+
+    @Transactional(readOnly = true)
+    public Double calculateMonthlyActivePlanRevenueLastMonth() {
+        QTenant qTenant = QTenant.tenant;
+        LocalDateTime startOfCurrentMonth = DateTimeUtil.nowUtc()
+                .withDayOfMonth(1)
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+
+        return queryFactory.select(qTenant.plan.monthlyPrice.sum())
+                .from(qTenant)
+                .where(qTenant.status.eq(TenantStatus.ACTIVE)
+                        .and(qTenant.createdAt.lt(startOfCurrentMonth))
+                        .and(qTenant.deletedAt.isNull().or(qTenant.deletedAt.goe(startOfCurrentMonth))))
+                .fetchOne();
+    }
 }
