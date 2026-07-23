@@ -29,4 +29,8 @@ public class TenantResponse {
     private Double monthlyPrice;
     private LocalDateTime expirationDate;
     private LocalDateTime createdAt;
+
+    public LocalDateTime getStartDate() {
+        return expirationDate != null ? expirationDate.minusDays(30) : null;
+    }
 }

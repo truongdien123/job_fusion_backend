@@ -13,6 +13,7 @@ import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.requests.StaffRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
+import com.tma.job_fusion_backend.pojo.responses.TenantStaffLimitResponse;
 import com.tma.job_fusion_backend.repositories.*;
 import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.repositories.query.UserQueryRepository;
@@ -63,20 +64,15 @@ public class UserServiceImpl implements UserService {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
         UserUtil.validateAccess(id, user, currentUser);
 
-        String resolvedRole = UserUtil.resolveUserRole(user, userRoleRepository);
-        UserResponse response = userMapper.toUserResponse(user);
-        response.setUserRole(resolvedRole);
-        return response;
+        return mapToUserResponse(user, UserUtil.resolveUserRole(user, userRoleRepository));
     }
 
     @Override
     @Transactional
     public UserResponse createStaff(StaffRequest request) {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
-        UUID tenantId = getRequiredTenantId(currentUser);
-
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
+        Tenant tenant = getTenantFromCurrentUser(currentUser);
+        UUID tenantId = tenant.getId();
 
         // Validate tenant max staff account limit
         if (tenant.getMaxStaffAccount() != null) {
@@ -124,9 +120,7 @@ public class UserServiceImpl implements UserService {
                         .build()
         );
 
-        UserResponse response = userMapper.toUserResponse(savedStaff);
-        response.setUserRole(String.join(", ", request.getRole()));
-        return response;
+        return mapToUserResponse(savedStaff, String.join(", ", request.getRole()));
     }
 
     @Override
@@ -137,11 +131,9 @@ public class UserServiceImpl implements UserService {
 
         StaffFilter filter = ObjectUtils.isNotEmpty(request) ? request.getFilters() : null;
         Page<User> staffPage = userQueryRepository.findStaffByTenantId(tenantId, RoleConstant.TENANT_ADMIN, filter, request.toPageable());
-        Page<UserResponse> mappedPage = staffPage.map(user -> {
-            UserResponse response = userMapper.toUserResponse(user);
-            response.setUserRole(UserUtil.resolveUserRole(user, userRoleRepository));
-            return response;
-        });
+        Page<UserResponse> mappedPage = staffPage.map(user -> 
+            mapToUserResponse(user, UserUtil.resolveUserRole(user, userRoleRepository))
+        );
 
         return PageResponse.of(mappedPage);
     }
@@ -165,10 +157,7 @@ public class UserServiceImpl implements UserService {
         // Find and assign requested roles
         assignRolesToUser(savedStaff, request.getRole(), currentUser.getId(), true);
 
-        UserResponse response = userMapper.toUserResponse(savedStaff);
-        response.setUserRole(String.join(", ", request.getRole()));
-
-        return response;
+        return mapToUserResponse(savedStaff, String.join(", ", request.getRole()));
     }
 
     @Override
@@ -277,5 +266,36 @@ public class UserServiceImpl implements UserService {
                         .loginUrl(loginLink)
                         .build()
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TenantStaffLimitResponse getTenantStaffLimit() {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        Tenant tenant = getTenantFromCurrentUser(currentUser);
+        UUID tenantId = tenant.getId();
+
+        long currentStaffCount = userQueryRepository.countStaffByTenantId(tenantId, RoleConstant.TENANT_ADMIN);
+
+        return TenantStaffLimitResponse.builder()
+                .currentStaff(currentStaffCount)
+                .maxStaff(tenant.getMaxStaffAccount())
+                .build();
+    }
+
+    private Tenant findTenantById(UUID tenantId) {
+        return tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
+    }
+
+    private Tenant getTenantFromCurrentUser(UserPrincipal currentUser) {
+        UUID tenantId = getRequiredTenantId(currentUser);
+        return findTenantById(tenantId);
+    }
+
+    private UserResponse mapToUserResponse(User user, String roles) {
+        UserResponse response = userMapper.toUserResponse(user);
+        response.setUserRole(roles);
+        return response;
     }
 }
