@@ -62,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public UserResponse signUp(SignUpRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail())) {
             throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
@@ -268,12 +268,12 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private User checkUserByEmail(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
     }
 
     private User checkUserById(UUID id) {
-        return userRepository.findById(id)
+        return userRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
     }
 

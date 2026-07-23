@@ -45,13 +45,13 @@ public class ValidationUtil {
         }
 
         if (principal.getTenantId() != null && !principal.hasRole(RoleConstant.SUPER_ADMIN)) {
-            Tenant tenant = tenantRepository.findById(principal.getTenantId()).orElse(null);
+            Tenant tenant = tenantRepository.findByIdAndDeletedAtIsNull(principal.getTenantId()).orElse(null);
             if (ObjectUtils.isEmpty(tenant) || tenant.getStatus() != TenantStatus.ACTIVE || tenant.getDeletedAt() != null) {
                 throw new NotActiveException(ErrorCode.TENANT_INACTIVE);
             }
         }
 
-        User user = userRepository.findById(principal.getId()).orElse(null);
+        User user = userRepository.findByIdAndDeletedAtIsNull(principal.getId()).orElse(null);
         if (ObjectUtils.isEmpty(user) || user.getStatus() != UserStatus.ACTIVE || user.getDeletedAt() != null) {
             throw new NotActiveException(ErrorCode.INACTIVE_USER);
         }
@@ -61,7 +61,7 @@ public class ValidationUtil {
         if (ObjectUtils.isNotEmpty(planId) && 
             (ObjectUtils.isEmpty(tenant.getPlan()) || !planId.equals(tenant.getPlan().getId()))) {
             
-            Plan plan = planRepository.findById(planId)
+            Plan plan = planRepository.findByIdAndDeletedAtIsNull(planId)
                     .orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
             tenant.setPlan(plan);
             tenant.setMaxStaffAccount(plan.getMaxStaffAccount());

@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.repositories.query;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.tma.job_fusion_backend.models.QJobPosting;
 import com.tma.job_fusion_backend.models.JobPosting;
@@ -66,7 +67,7 @@ public class JobPostingQueryRepository {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(qJobPosting.createdAt.desc())
+                .orderBy(getOrderSpecifiers(pageable, qJobPosting))
                 .fetch();
 
         Long total = queryFactory.select(qJobPosting.count())
@@ -75,5 +76,28 @@ public class JobPostingQueryRepository {
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QJobPosting qJobPosting) {
+        List<OrderSpecifier<?>> specifiers = new java.util.ArrayList<>();
+        if (pageable.getSort().isSorted()) {
+            for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+                boolean isAsc = order.isAscending();
+                String prop = order.getProperty();
+                if ("title".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qJobPosting.title.asc() : qJobPosting.title.desc());
+                } else if ("department".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qJobPosting.department.asc() : qJobPosting.department.desc());
+                } else if ("location".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qJobPosting.location.asc() : qJobPosting.location.desc());
+                } else if ("createdAt".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qJobPosting.createdAt.asc() : qJobPosting.createdAt.desc());
+                }
+            }
+        }
+        if (specifiers.isEmpty()) {
+            specifiers.add(qJobPosting.createdAt.desc());
+        }
+        return specifiers.toArray(new OrderSpecifier<?>[0]);
     }
 }

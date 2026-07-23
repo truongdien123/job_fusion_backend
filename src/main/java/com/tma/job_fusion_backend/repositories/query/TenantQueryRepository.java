@@ -3,6 +3,7 @@ package com.tma.job_fusion_backend.repositories.query;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.OrderSpecifier;
 import com.tma.job_fusion_backend.pojo.dtos.TenantFilter;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQuery;
@@ -119,7 +120,7 @@ public class TenantQueryRepository {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(qTenant.createdAt.desc())
+                .orderBy(getOrderSpecifiers(pageable, qTenant))
                 .fetch();
 
         Long total = queryFactory.select(qTenant.count())
@@ -130,6 +131,31 @@ public class TenantQueryRepository {
         long totalCount = Optional.ofNullable(total).orElse(0L);
 
         return new PageImpl<>(content, pageable, totalCount);
+    }
+
+    private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QTenant qTenant) {
+        List<OrderSpecifier<?>> specifiers = new java.util.ArrayList<>();
+        if (pageable.getSort().isSorted()) {
+            for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+                boolean isAsc = order.isAscending();
+                String prop = order.getProperty();
+                if ("companyName".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qTenant.companyName.asc() : qTenant.companyName.desc());
+                } else if ("domain".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qTenant.domain.asc() : qTenant.domain.desc());
+                } else if ("industry".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qTenant.industry.asc() : qTenant.industry.desc());
+                } else if ("monthlyPrice".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qTenant.plan.monthlyPrice.asc() : qTenant.plan.monthlyPrice.desc());
+                } else if ("createdAt".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qTenant.createdAt.asc() : qTenant.createdAt.desc());
+                }
+            }
+        }
+        if (specifiers.isEmpty()) {
+            specifiers.add(qTenant.createdAt.desc());
+        }
+        return specifiers.toArray(new OrderSpecifier<?>[0]);
     }
 
     @Transactional(readOnly = true)

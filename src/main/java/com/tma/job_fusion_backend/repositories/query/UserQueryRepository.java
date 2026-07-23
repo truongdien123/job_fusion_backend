@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.repositories.query;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.tma.job_fusion_backend.models.QUser;
@@ -83,7 +84,7 @@ public class UserQueryRepository {
                 .where(predicate)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(qUser.createdAt.desc())
+                .orderBy(getOrderSpecifiers(pageable, qUser))
                 .fetch();
 
         Long total = queryFactory.select(qUser.count())
@@ -92,6 +93,33 @@ public class UserQueryRepository {
                 .fetchOne();
 
         return new PageImpl<>(users, pageable, total);
+    }
+
+    private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QUser qUser) {
+        List<OrderSpecifier<?>> specifiers = new java.util.ArrayList<>();
+        if (pageable.getSort().isSorted()) {
+            for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+                boolean isAsc = order.isAscending();
+                String prop = order.getProperty();
+                if ("fullName".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qUser.fullName.asc() : qUser.fullName.desc());
+                } else if ("email".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qUser.email.asc() : qUser.email.desc());
+                } else if ("phone".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qUser.phone.asc() : qUser.phone.desc());
+                } else if ("employeeCode".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qUser.employeeCode.asc() : qUser.employeeCode.desc());
+                } else if ("jobTitle".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qUser.jobTitle.asc() : qUser.jobTitle.desc());
+                } else if ("createdAt".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qUser.createdAt.asc() : qUser.createdAt.desc());
+                }
+            }
+        }
+        if (specifiers.isEmpty()) {
+            specifiers.add(qUser.createdAt.desc());
+        }
+        return specifiers.toArray(new OrderSpecifier<?>[0]);
     }
 
     @Transactional(readOnly = true)

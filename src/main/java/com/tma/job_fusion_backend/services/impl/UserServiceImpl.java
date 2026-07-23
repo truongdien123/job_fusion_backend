@@ -83,7 +83,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // Validate email uniqueness
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail())) {
             throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
         String password = PasswordUtil.generateRandomPassword();
@@ -284,7 +284,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private Tenant findTenantById(UUID tenantId) {
-        return tenantRepository.findById(tenantId)
+        return tenantRepository.findByIdAndDeletedAtIsNull(tenantId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
     }
 

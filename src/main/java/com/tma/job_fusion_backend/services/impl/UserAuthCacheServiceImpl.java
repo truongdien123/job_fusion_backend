@@ -36,7 +36,7 @@ public class UserAuthCacheServiceImpl implements UserAuthCacheService {
         }
 
         // Cache miss: load from DB once
-        Optional<User> userOptional = userRepository.findById(userId);
+        Optional<User> userOptional = userRepository.findByIdAndDeletedAtIsNull(userId);
         if (userOptional.isPresent() && userOptional.get().getPasswordChangedAt() != null) {
             long millis = DateTimeUtil.toEpochMilli(userOptional.get().getPasswordChangedAt());
             passwordChangedCache.put(userId, millis);
