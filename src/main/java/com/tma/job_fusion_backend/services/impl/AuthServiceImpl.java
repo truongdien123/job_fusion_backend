@@ -3,6 +3,7 @@ package com.tma.job_fusion_backend.services.impl;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.components.UserPrincipal;
+import com.tma.job_fusion_backend.enums.EventType;
 import com.tma.job_fusion_backend.exceptions.*;
 import com.tma.job_fusion_backend.pojo.requests.*;
 import com.tma.job_fusion_backend.pojo.responses.ActivationDetailsResponse;
@@ -91,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
         if (UserType.TENANT == user.getType()) {
             activityLogService.log(
                     user.getId(),
-                    com.tma.job_fusion_backend.enums.EventType.LOGIN,
+                    EventType.LOGIN,
                     "User logged in: " + user.getEmail()
             );
         }
