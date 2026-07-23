@@ -17,6 +17,8 @@ import com.tma.job_fusion_backend.repositories.JobPostingRepository;
 import com.tma.job_fusion_backend.repositories.TenantRepository;
 import com.tma.job_fusion_backend.repositories.query.JobPostingQueryRepository;
 import com.tma.job_fusion_backend.services.JobPostingService;
+import com.tma.job_fusion_backend.services.ActivityLogService;
+import com.tma.job_fusion_backend.enums.EventType;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.ValidationUtil;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,7 @@ public class JobPostingServiceImpl implements JobPostingService {
     private final TenantRepository tenantRepository;
     private final JobPostingMapper jobPostingMapper;
     private final ValidationUtil validationUtil;
+    private final ActivityLogService activityLogService;
 
     @Override
     @Transactional
@@ -66,6 +69,13 @@ public class JobPostingServiceImpl implements JobPostingService {
         jobPosting.setCreatedBy(currentUser.getId());
 
         JobPosting savedJob = jobPostingRepository.save(jobPosting);
+
+        activityLogService.log(
+                currentUser.getId(),
+                EventType.ACTION,
+                "Created job posting: " + savedJob.getTitle()
+        );
+
         return jobPostingMapper.toResponse(savedJob);
     }
 
