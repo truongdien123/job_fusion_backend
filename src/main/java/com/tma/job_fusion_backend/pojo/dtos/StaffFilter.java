@@ -15,5 +15,6 @@ public class StaffFilter {
     private String phone;
     private String employeeCode;
     private String jobTitle;
+    private String userRole;
     private UserStatus status;
 }

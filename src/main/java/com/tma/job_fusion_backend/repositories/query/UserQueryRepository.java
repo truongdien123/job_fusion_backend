@@ -69,6 +69,14 @@ public class UserQueryRepository {
             if (ObjectUtils.isNotEmpty(filter.getStatus())) {
                 predicate = predicate.and(qUser.status.eq(filter.getStatus()));
             }
+            if (StringUtils.isNotEmpty(filter.getUserRole())) {
+                predicate = predicate.and(qUser.id.in(
+                        JPAExpressions.select(qUserRole.user.id)
+                                .from(qUserRole)
+                                .where(qUserRole.role.name.equalsIgnoreCase(filter.getUserRole().trim())
+                                        .and(qUserRole.deletedAt.isNull()))
+                ));
+            }
         }
 
         List<User> users = queryFactory.selectFrom(qUser)
