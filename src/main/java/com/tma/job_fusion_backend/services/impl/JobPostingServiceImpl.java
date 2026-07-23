@@ -52,7 +52,7 @@ public class JobPostingServiceImpl implements JobPostingService {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
 
-        Tenant tenant = tenantRepository.findById(tenantId)
+        Tenant tenant = tenantRepository.findByIdAndDeletedAtIsNull(tenantId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
 
         validateTitleUniqueness(tenantId, request.getTitle(), null);

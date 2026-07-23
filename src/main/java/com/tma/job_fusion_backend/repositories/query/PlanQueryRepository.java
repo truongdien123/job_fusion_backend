@@ -1,7 +1,10 @@
 package com.tma.job_fusion_backend.repositories.query;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.ArrayList;
+import org.springframework.data.domain.Sort;
 import com.tma.job_fusion_backend.models.QPlan;
 import com.tma.job_fusion_backend.models.QTenant;
 import com.tma.job_fusion_backend.models.Plan;
@@ -56,7 +59,7 @@ public class PlanQueryRepository {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(qPlan.createdAt.desc())
+                .orderBy(getOrderSpecifiers(pageable, qPlan))
                 .fetch();
 
         Long total = queryFactory.select(qPlan.count())
@@ -65,6 +68,31 @@ public class PlanQueryRepository {
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QPlan qPlan) {
+        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
+        if (pageable.getSort().isSorted()) {
+            for (Sort.Order order : pageable.getSort()) {
+                boolean isAsc = order.isAscending();
+                String prop = order.getProperty();
+                if ("monthlyPrice".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qPlan.monthlyPrice.asc() : qPlan.monthlyPrice.desc());
+                } else if ("name".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qPlan.name.asc() : qPlan.name.desc());
+                } else if ("maxStaffAccount".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qPlan.maxStaffAccount.asc() : qPlan.maxStaffAccount.desc());
+                } else if ("maxActiveJobPosting".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qPlan.maxActiveJobPosting.asc() : qPlan.maxActiveJobPosting.desc());
+                } else if ("createdAt".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qPlan.createdAt.asc() : qPlan.createdAt.desc());
+                }
+            }
+        }
+        if (specifiers.isEmpty()) {
+            specifiers.add(qPlan.createdAt.desc());
+        }
+        return specifiers.toArray(new OrderSpecifier<?>[0]);
     }
 
     @Transactional(readOnly = true)

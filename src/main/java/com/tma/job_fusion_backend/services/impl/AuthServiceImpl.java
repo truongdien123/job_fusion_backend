@@ -3,18 +3,15 @@ package com.tma.job_fusion_backend.services.impl;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.components.UserPrincipal;
-import com.tma.job_fusion_backend.enums.EventType;
+import com.tma.job_fusion_backend.enums.*;
 import com.tma.job_fusion_backend.exceptions.*;
 import com.tma.job_fusion_backend.pojo.requests.*;
 import com.tma.job_fusion_backend.pojo.responses.ActivationDetailsResponse;
 import com.tma.job_fusion_backend.pojo.responses.AuthResponse;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
-import com.tma.job_fusion_backend.enums.UserStatus;
-import com.tma.job_fusion_backend.enums.UserType;
 import com.tma.job_fusion_backend.mappers.UserMapper;
 import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.models.UserToken;
-import com.tma.job_fusion_backend.enums.TokenType;
 import com.tma.job_fusion_backend.repositories.UserRepository;
 import com.tma.job_fusion_backend.repositories.UserTokenRepository;
 import com.tma.job_fusion_backend.repositories.UserRoleRepository;
@@ -62,7 +59,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public UserResponse signUp(SignUpRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail())) {
             throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
@@ -201,6 +198,10 @@ public class AuthServiceImpl implements AuthService {
             throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
         }
 
+        if (UserType.TENANT == user.getType() && TenantStatus.INACTIVE == user.getTenant().getStatus()) {
+            throw new ForbiddenException(ErrorCode.TENANT_INACTIVE);
+        }
+
         String resolvedRole = UserUtil.resolveUserRole(user, userRoleRepository);
 
         String token = jwtUtil.generateToken(
@@ -268,12 +269,12 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private User checkUserByEmail(String email) {
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
     }
 
     private User checkUserById(UUID id) {
-        return userRepository.findById(id)
+        return userRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
     }
 

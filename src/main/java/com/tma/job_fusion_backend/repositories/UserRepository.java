@@ -13,7 +13,9 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByEmail(String email);
+    boolean existsByEmailAndDeletedAtIsNull(String email);
     Optional<User> findByEmail(String email);
+    Optional<User> findByEmailAndDeletedAtIsNull(String email);
     Optional<User> findByIdAndDeletedAtIsNull(UUID id);
     List<User> findAllByTenantIdAndDeletedAtIsNull(UUID tenantId);
     Page<User> findAllByTenantIdAndDeletedAtIsNull(UUID tenantId, Pageable pageable);

@@ -63,13 +63,13 @@ public class TenantServiceImpl implements TenantService {
     @Override
     @Transactional
     public TenantResponse createTenant(TenantRequest request) {
-        if (userRepository.existsByEmail(request.getAdminEmail())) {
+        if (userRepository.existsByEmailAndDeletedAtIsNull(request.getAdminEmail())) {
             throw new BadRequestException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         validateCompanyNameUniqueness(request.getCompanyName(), null);
 
-        Plan plan = planRepository.findById(request.getPlanId())
+        Plan plan = planRepository.findByIdAndDeletedAtIsNull(request.getPlanId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
 
         Tenant tenant = tenantMapper.toEntity(request);
