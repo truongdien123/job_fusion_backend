@@ -13,6 +13,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_STAFF_BASE = "/staff";
     public static final String ENDPOINT_ACTIVITY_LOG_BASE = "/activity-log";
     public static final String ENDPOINT_JOB_POSTING_BASE = "/job-posting";
+    public static final String ENDPOINT_JOB_CRITERIA_BASE = "/job-criteria";
 
     // Core endpoints with /api
     public static final String ENDPOINT_AUTH = ENDPOINT_PREFIX + ENDPOINT_AUTH_BASE;
@@ -22,6 +23,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_DASHBOARD = ENDPOINT_PREFIX + ENDPOINT_DASHBOARD_BASE;
     public static final String ENDPOINT_ACTIVITY_LOG = ENDPOINT_PREFIX + ENDPOINT_ACTIVITY_LOG_BASE;
     public static final String ENDPOINT_JOB_POSTING = ENDPOINT_PREFIX + ENDPOINT_JOB_POSTING_BASE;
+    public static final String ENDPOINT_JOB_CRITERIA = ENDPOINT_PREFIX + ENDPOINT_JOB_CRITERIA_BASE;
 
     // Authentication methods
     public static final String ENDPOINT_SIGNIN_BASE = "/signin";

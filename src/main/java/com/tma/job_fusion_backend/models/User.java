@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class User extends BaseEntity {
 
-    @Column(unique = true)
+    @Column // Uniqueness is enforced by index idx_users_email_deleted_at_null (where deleted_at is null) in DB
     private String email;
 
     private String password;
