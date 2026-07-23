@@ -26,4 +26,5 @@ public final class ErrorCode {
     public static final String JOB_TITLE_ALREADY_EXISTS = "job_title_already_exists";
     public static final String INVALID_SALARY_RANGE = "salary_max_must_be_greater_than_or_equal_to_salary_min";
     public static final String COMPANY_NAME_ALREADY_EXISTS = "company_name_already_exists";
+    public static final String JOB_CRITERIA_NOT_FOUND = "job_criteria_not_found";
 }

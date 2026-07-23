@@ -20,6 +20,8 @@ public class JobCriteria extends BaseEntity {
 
     private String description;
 
+    private String category;
+
     private Double weight;
 
 }
