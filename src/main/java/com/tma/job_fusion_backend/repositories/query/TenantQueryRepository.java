@@ -77,10 +77,7 @@ public class TenantQueryRepository {
         if (ObjectUtils.isNotEmpty(filter)) {
             if (StringUtils.isNotEmpty(filter.getSearch())) {
                 String search = filter.getSearch().trim();
-                builder.and(qTenant.companyName.containsIgnoreCase(search)
-                        .or(qTenant.domain.containsIgnoreCase(search))
-                        .or(qTenant.industry.containsIgnoreCase(search))
-                        .or(qTenant.plan.name.containsIgnoreCase(search)));
+                builder.and(qTenant.companyName.containsIgnoreCase(search));
             }
             if (ObjectUtils.isNotEmpty(filter.getStatus())) {
                 builder.and(qTenant.status.eq(filter.getStatus()));
