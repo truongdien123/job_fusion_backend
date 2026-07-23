@@ -78,7 +78,7 @@ public class TenantServiceImpl implements TenantService {
         tenant.setMaxStaffAccount(plan.getMaxStaffAccount());
         tenant.setMaxActiveJobPosting(plan.getMaxActiveJobPosting());
         tenant.setCreatedBy(jwtUtil.getCurrentUserId());
-        tenant.setExpirationDate(DateTimeUtil.nowUtc().plusMonths(1));
+        tenant.setExpirationDate(DateTimeUtil.nowUtc().plusDays(30));
         tenant.setCompanySize(0);
 
         Tenant savedTenant = tenantRepository.save(tenant);

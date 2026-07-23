@@ -13,6 +13,7 @@ import com.tma.job_fusion_backend.models.User;
 import com.tma.job_fusion_backend.repositories.PlanRepository;
 import com.tma.job_fusion_backend.repositories.TenantRepository;
 import com.tma.job_fusion_backend.repositories.UserRepository;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.security.access.AccessDeniedException;
@@ -65,6 +66,7 @@ public class ValidationUtil {
             tenant.setPlan(plan);
             tenant.setMaxStaffAccount(plan.getMaxStaffAccount());
             tenant.setMaxActiveJobPosting(plan.getMaxActiveJobPosting());
+            tenant.setExpirationDate(DateTimeUtil.nowUtc().plusDays(30));
         }
     }
 }

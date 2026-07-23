@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.requests.StaffRequest;
 import com.tma.job_fusion_backend.pojo.responses.UserResponse;
+import com.tma.job_fusion_backend.pojo.responses.TenantStaffLimitResponse;
 import com.tma.job_fusion_backend.services.UserService;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -65,5 +66,12 @@ public class UserController {
     public ResponseEntity<?> resendStaffActivation(@PathVariable UUID id) {
         userService.resendStaffActivation(id);
         return ResponseUtil.success("Resend staff activation link successfully", null);
+    }
+
+    @GetMapping(EndpointConstant.ENDPOINT_STAFF_LIMIT)
+    @RequireRoles(RoleConstant.TENANT_ADMIN)
+    public ResponseEntity<?> getTenantStaffLimit() {
+        TenantStaffLimitResponse response = userService.getTenantStaffLimit();
+        return ResponseUtil.success("Get tenant staff limit successfully", response);
     }
 }
