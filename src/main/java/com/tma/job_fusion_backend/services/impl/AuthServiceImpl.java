@@ -22,6 +22,7 @@ import com.tma.job_fusion_backend.repositories.query.UserTokenQueryRepository;
 import com.tma.job_fusion_backend.services.AuthService;
 import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.services.UserAuthCacheService;
+import com.tma.job_fusion_backend.services.ActivityLogService;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.JwtUtil;
 import com.tma.job_fusion_backend.utils.UserUtil;
@@ -55,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRoleRepository userRoleRepository;
     private final UserTokenQueryRepository userTokenQueryRepository;
     private final UserAuthCacheService userAuthCacheService;
+    private final ActivityLogService activityLogService;
 
     @Override
     @Transactional
@@ -76,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse signIn(SignInRequest request) {
         User user = checkUserByEmail(request.getEmail());
 
@@ -84,7 +86,17 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException(ErrorCode.INVALID_PASSWORD);
         }
 
-        return handleUserToResponse(user);
+        AuthResponse response = handleUserToResponse(user);
+
+        if (UserType.TENANT == user.getType()) {
+            activityLogService.log(
+                    user.getId(),
+                    com.tma.job_fusion_backend.enums.EventType.LOGIN,
+                    "User logged in: " + user.getEmail()
+            );
+        }
+
+        return response;
     }
 
     @Override

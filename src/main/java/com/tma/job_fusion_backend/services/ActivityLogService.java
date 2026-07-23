@@ -7,4 +7,5 @@ import org.springframework.data.domain.Page;
 
 public interface ActivityLogService {
     Page<ActivityLogResponse> getListActivityLog(PagingRequest<ActivityLogFilter> request);
+    void log(java.util.UUID userId, com.tma.job_fusion_backend.enums.EventType eventType, String description);
 }
