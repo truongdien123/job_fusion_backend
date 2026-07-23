@@ -3,6 +3,8 @@ package com.tma.job_fusion_backend.repositories.query;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.ArrayList;
+import org.springframework.data.domain.Sort;
 import com.tma.job_fusion_backend.models.QPlan;
 import com.tma.job_fusion_backend.models.QTenant;
 import com.tma.job_fusion_backend.models.Plan;
@@ -69,9 +71,9 @@ public class PlanQueryRepository {
     }
 
     private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QPlan qPlan) {
-        List<OrderSpecifier<?>> specifiers = new java.util.ArrayList<>();
+        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
         if (pageable.getSort().isSorted()) {
-            for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+            for (Sort.Order order : pageable.getSort()) {
                 boolean isAsc = order.isAscending();
                 String prop = order.getProperty();
                 if ("monthlyPrice".equalsIgnoreCase(prop)) {

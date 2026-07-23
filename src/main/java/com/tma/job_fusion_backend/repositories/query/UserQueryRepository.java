@@ -3,6 +3,8 @@ package com.tma.job_fusion_backend.repositories.query;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.JPAExpressions;
+import java.util.ArrayList;
+import org.springframework.data.domain.Sort;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.tma.job_fusion_backend.models.QUser;
 import com.tma.job_fusion_backend.models.QUserRole;
@@ -96,9 +98,9 @@ public class UserQueryRepository {
     }
 
     private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QUser qUser) {
-        List<OrderSpecifier<?>> specifiers = new java.util.ArrayList<>();
+        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
         if (pageable.getSort().isSorted()) {
-            for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+            for (Sort.Order order : pageable.getSort()) {
                 boolean isAsc = order.isAscending();
                 String prop = order.getProperty();
                 if ("fullName".equalsIgnoreCase(prop)) {

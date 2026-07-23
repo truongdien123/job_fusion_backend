@@ -3,6 +3,8 @@ package com.tma.job_fusion_backend.repositories.query;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.ArrayList;
+import org.springframework.data.domain.Sort;
 import com.tma.job_fusion_backend.models.QJobPosting;
 import com.tma.job_fusion_backend.models.JobPosting;
 import com.tma.job_fusion_backend.pojo.dtos.JobPostingFilter;
@@ -79,9 +81,9 @@ public class JobPostingQueryRepository {
     }
 
     private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QJobPosting qJobPosting) {
-        List<OrderSpecifier<?>> specifiers = new java.util.ArrayList<>();
+        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
         if (pageable.getSort().isSorted()) {
-            for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+            for (Sort.Order order : pageable.getSort()) {
                 boolean isAsc = order.isAscending();
                 String prop = order.getProperty();
                 if ("title".equalsIgnoreCase(prop)) {
