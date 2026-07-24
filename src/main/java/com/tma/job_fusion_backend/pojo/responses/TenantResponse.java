@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.pojo.responses;
 
 import com.tma.job_fusion_backend.enums.TenantStatus;
+import com.tma.job_fusion_backend.enums.BillingCycle;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -26,11 +27,18 @@ public class TenantResponse {
     private UUID adminUserId;
     private Long activeJob;
     private Integer maxActiveJobPosting;
-    private Double monthlyPrice;
+    private Double price;
+    private BillingCycle billingCycle;
     private LocalDateTime expirationDate;
     private LocalDateTime createdAt;
 
     public LocalDateTime getStartDate() {
-        return expirationDate != null ? expirationDate.minusDays(30) : null;
+        if (expirationDate != null) {
+            if (billingCycle == BillingCycle.YEARLY) {
+                return expirationDate.minusDays(365);
+            }
+            return expirationDate.minusDays(30);
+        }
+        return null;
     }
 }

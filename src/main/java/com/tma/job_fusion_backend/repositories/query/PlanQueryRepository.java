@@ -76,8 +76,8 @@ public class PlanQueryRepository {
             for (Sort.Order order : pageable.getSort()) {
                 boolean isAsc = order.isAscending();
                 String prop = order.getProperty();
-                if ("monthlyPrice".equalsIgnoreCase(prop)) {
-                    specifiers.add(isAsc ? qPlan.monthlyPrice.asc() : qPlan.monthlyPrice.desc());
+                if ("monthlyPrice".equalsIgnoreCase(prop) || "price".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qPlan.price.asc() : qPlan.price.desc());
                 } else if ("name".equalsIgnoreCase(prop)) {
                     specifiers.add(isAsc ? qPlan.name.asc() : qPlan.name.desc());
                 } else if ("maxStaffAccount".equalsIgnoreCase(prop)) {
@@ -134,7 +134,7 @@ public class PlanQueryRepository {
                 .where(qPlan.status.eq(PlanStatus.ACTIVE)
                         .and(qPlan.deletedAt.isNull()))
                 .groupBy(qPlan.id)
-                .orderBy(qTenant.count().desc(), qPlan.monthlyPrice.desc())
+                .orderBy(qTenant.count().desc(), qPlan.price.desc())
                 .limit(1)
                 .fetchOne();
         return Optional.ofNullable(plan);

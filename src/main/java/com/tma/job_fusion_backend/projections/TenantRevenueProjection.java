@@ -11,5 +11,6 @@ import java.time.LocalDateTime;
 public class TenantRevenueProjection {
     private LocalDateTime createdAt;
     private LocalDateTime deletedAt;
-    private Double monthlyPrice;
+    private Double price;
+    private com.tma.job_fusion_backend.enums.BillingCycle billingCycle;
 }

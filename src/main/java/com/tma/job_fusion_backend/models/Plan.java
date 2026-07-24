@@ -10,6 +10,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.tma.job_fusion_backend.enums.PlanStatus;
+import com.tma.job_fusion_backend.enums.BillingCycle;
 
 @Entity
 @Table(name = "plan")
@@ -24,8 +25,12 @@ public class Plan extends BaseEntity {
     @Column(length = 1000)
     private String description;
 
-    @Column(name = "monthly_price")
-    private Double monthlyPrice;
+    @Column(name = "price")
+    private Double price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_cycle")
+    private BillingCycle billingCycle;
 
     @Column(name = "max_staff_account")
     private Integer maxStaffAccount;

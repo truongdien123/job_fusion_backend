@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.pojo.responses;
 
 import com.tma.job_fusion_backend.enums.PlanStatus;
+import com.tma.job_fusion_backend.enums.BillingCycle;
 import com.tma.job_fusion_backend.pojo.dtos.FeatureDto;
 import lombok.*;
 
@@ -21,7 +22,9 @@ public class PlanResponse {
 
     private String description;
 
-    private Double monthlyPrice;
+    private Double price;
+
+    private BillingCycle billingCycle;
 
     private Integer maxStaffAccount;
 

@@ -2,11 +2,7 @@ package com.tma.job_fusion_backend.services.impl;
 
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.commons.RoleConstant;
-import com.tma.job_fusion_backend.enums.TenantStatus;
-import com.tma.job_fusion_backend.enums.TokenType;
-import com.tma.job_fusion_backend.enums.JobStatus;
-import com.tma.job_fusion_backend.enums.UserStatus;
-import com.tma.job_fusion_backend.enums.UserType;
+import com.tma.job_fusion_backend.enums.*;
 import com.tma.job_fusion_backend.exceptions.*;
 import com.tma.job_fusion_backend.models.*;
 import com.tma.job_fusion_backend.pojo.requests.TenantRequest;
@@ -78,7 +74,9 @@ public class TenantServiceImpl implements TenantService {
         tenant.setMaxStaffAccount(plan.getMaxStaffAccount());
         tenant.setMaxActiveJobPosting(plan.getMaxActiveJobPosting());
         tenant.setCreatedBy(jwtUtil.getCurrentUserId());
-        tenant.setExpirationDate(DateTimeUtil.nowUtc().plusDays(30));
+        tenant.setExpirationDate(plan.getBillingCycle() == BillingCycle.YEARLY
+                ? DateTimeUtil.nowUtc().plusDays(365)
+                : DateTimeUtil.nowUtc().plusDays(30));
         tenant.setCompanySize(0);
 
         Tenant savedTenant = tenantRepository.save(tenant);
