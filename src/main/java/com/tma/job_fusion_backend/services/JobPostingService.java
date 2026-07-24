@@ -13,4 +13,5 @@ public interface JobPostingService {
     JobPostingResponse getJobPostingDetail(UUID id);
     JobPostingResponse updateJobPosting(UUID id, JobPostingRequest request);
     void deleteJobPosting(UUID id);
+    void checkTitleUniqueness(String title, UUID excludeId);
 }

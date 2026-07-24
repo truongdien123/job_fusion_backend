@@ -42,7 +42,7 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
             throw new BadRequestException(ErrorCode.INVALID_JOB_CRITERIA);
         }
 
-        UUID jobId = requests.get(0).getJobId();
+        UUID jobId = requests.getFirst().getJobId();
         if (ObjectUtils.isEmpty(jobId)) {
             throw new BadRequestException(ErrorCode.INVALID_JOB_CRITERIA);
         }
@@ -178,7 +178,7 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
     }
 
     private void validateTenantAccess(UserPrincipal currentUser, JobPosting jobPosting) {
-        if (jobPosting.getTenant() == null || !currentUser.getTenantId().equals(jobPosting.getTenant().getId())) {
+        if (ObjectUtils.isEmpty(jobPosting.getTenant()) || !currentUser.getTenantId().equals(jobPosting.getTenant().getId())) {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
     }

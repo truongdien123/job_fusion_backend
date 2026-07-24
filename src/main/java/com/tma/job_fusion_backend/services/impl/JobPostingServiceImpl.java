@@ -55,7 +55,6 @@ public class JobPostingServiceImpl implements JobPostingService {
         Tenant tenant = tenantRepository.findByIdAndDeletedAtIsNull(tenantId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
 
-        validateTitleUniqueness(tenantId, request.getTitle(), null);
         validateSalaryRange(request.getSalaryMin(), request.getSalaryMax());
 
         JobStatus targetStatus = request.getStatus() != null ? request.getStatus() : JobStatus.OPEN;
@@ -108,11 +107,6 @@ public class JobPostingServiceImpl implements JobPostingService {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
         JobPosting jobPosting = findJobPostingById(id);
         validateTenantAccess(currentUser, jobPosting);
-
-        UUID tenantId = currentUser.getTenantId();
-        if (StringUtils.isNotEmpty(request.getTitle()) && !request.getTitle().trim().equalsIgnoreCase(jobPosting.getTitle())) {
-            validateTitleUniqueness(tenantId, request.getTitle(), id);
-        }
 
         validateSalaryRange(request.getSalaryMin(), request.getSalaryMax());
 
@@ -180,5 +174,18 @@ public class JobPostingServiceImpl implements JobPostingService {
         if (exists) {
             throw new BadRequestException(ErrorCode.JOB_TITLE_ALREADY_EXISTS);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void checkTitleUniqueness(String title, UUID excludeId) {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        UUID tenantId = currentUser.getTenantId();
+
+        if (ObjectUtils.isEmpty(tenantId)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        validateTitleUniqueness(tenantId, title, excludeId);
     }
 }
