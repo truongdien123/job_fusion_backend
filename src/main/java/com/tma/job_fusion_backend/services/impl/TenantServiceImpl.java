@@ -64,6 +64,7 @@ public class TenantServiceImpl implements TenantService {
         }
 
         validateCompanyNameUniqueness(request.getCompanyName(), null);
+        validateDomainUniqueness(request.getDomain(), null);
 
         Plan plan = planRepository.findByIdAndDeletedAtIsNull(request.getPlanId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.PLAN_NOT_FOUND));
@@ -162,6 +163,11 @@ public class TenantServiceImpl implements TenantService {
             validateCompanyNameUniqueness(request.getCompanyName(), id);
         }
 
+        if (StringUtils.isNotEmpty(request.getDomain()) && 
+            !request.getDomain().trim().equalsIgnoreCase(tenant.getDomain())) {
+            validateDomainUniqueness(request.getDomain(), id);
+        }
+
         validationUtil.validateAndSetPlan(tenant, request.getPlanId());
 
         if (ObjectUtils.isNotEmpty(request.getStatus())) {
@@ -225,6 +231,20 @@ public class TenantServiceImpl implements TenantService {
 
         if (exists) {
             throw new BadRequestException(ErrorCode.COMPANY_NAME_ALREADY_EXISTS);
+        }
+    }
+
+    private void validateDomainUniqueness(String domain, UUID excludeId) {
+        if (StringUtils.isEmpty(domain)) {
+            return;
+        }
+        String trimmedDomain = domain.trim();
+        boolean exists = (ObjectUtils.isEmpty(excludeId))
+                ? tenantRepository.existsByDomainIgnoreCaseAndDeletedAtIsNull(trimmedDomain)
+                : tenantRepository.existsByDomainIgnoreCaseAndIdNotAndDeletedAtIsNull(trimmedDomain, excludeId);
+
+        if (exists) {
+            throw new BadRequestException(ErrorCode.DOMAIN_ALREADY_EXISTS);
         }
     }
 }

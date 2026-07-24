@@ -292,10 +292,11 @@ public class TenantQueryRepository {
                 )
                 .fetchOne();
 
-        BooleanExpression churnedBeforeStart = qTenant.deletedAt.lt(startOfQuarter)
+        BooleanExpression churnedBeforeStart = qTenant.deletedAt.isNotNull().and(qTenant.deletedAt.lt(startOfQuarter))
                 .or(
                         qTenant.status.eq(TenantStatus.INACTIVE)
                                 .and(qTenant.deletedAt.isNull())
+                                .and(qTenant.updatedAt.isNotNull())
                                 .and(qTenant.updatedAt.lt(startOfQuarter))
                 );
 
@@ -313,13 +314,12 @@ public class TenantQueryRepository {
     @Transactional(readOnly = true)
     public Long countActiveSubscribersByPlanId(UUID planId) {
         QTenant qTenant = QTenant.tenant;
-        Long count = queryFactory.select(qTenant.count())
+        return queryFactory.select(qTenant.count())
                 .from(qTenant)
                 .where(qTenant.plan.id.eq(planId)
                         .and(qTenant.status.eq(TenantStatus.ACTIVE))
                         .and(qTenant.deletedAt.isNull()))
                 .fetchOne();
-        return count != null ? count : 0L;
     }
 
     @Transactional(readOnly = true)
