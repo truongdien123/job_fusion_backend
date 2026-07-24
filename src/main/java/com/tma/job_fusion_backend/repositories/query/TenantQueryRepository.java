@@ -4,7 +4,12 @@ package com.tma.job_fusion_backend.repositories.query;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import java.util.ArrayList;
+
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.NumberExpression;
+import com.tma.job_fusion_backend.enums.BillingCycle;
 import org.springframework.data.domain.Sort;
 import com.tma.job_fusion_backend.pojo.dtos.TenantFilter;
 import com.querydsl.jpa.JPAExpressions;
@@ -114,7 +119,8 @@ public class TenantQueryRepository {
                         adminUserIdSubquery,
                         activeJobSubquery,
                         qTenant.maxActiveJobPosting,
-                        qTenant.plan.monthlyPrice,
+                        qTenant.plan.price,
+                        qTenant.plan.billingCycle,
                         qTenant.expirationDate,
                         qTenant.createdAt
                 ))
@@ -147,8 +153,8 @@ public class TenantQueryRepository {
                     specifiers.add(isAsc ? qTenant.domain.asc() : qTenant.domain.desc());
                 } else if ("industry".equalsIgnoreCase(prop)) {
                     specifiers.add(isAsc ? qTenant.industry.asc() : qTenant.industry.desc());
-                } else if ("monthlyPrice".equalsIgnoreCase(prop)) {
-                    specifiers.add(isAsc ? qTenant.plan.monthlyPrice.asc() : qTenant.plan.monthlyPrice.desc());
+                } else if ("monthlyPrice".equalsIgnoreCase(prop) || "price".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qTenant.plan.price.asc() : qTenant.plan.price.desc());
                 } else if ("createdAt".equalsIgnoreCase(prop)) {
                     specifiers.add(isAsc ? qTenant.createdAt.asc() : qTenant.createdAt.desc());
                 }
@@ -174,12 +180,13 @@ public class TenantQueryRepository {
     public Double calculateTotalRevenue() {
         QTenant qTenant = QTenant.tenant;
 
-        // get monthly price of active tenants using projection constructor
+        // get price and billing cycle of active tenants using projection constructor
         List<TenantRevenueProjection> results = queryFactory.select(Projections.constructor(
                         TenantRevenueProjection.class,
                         qTenant.createdAt,
                         qTenant.deletedAt,
-                        qTenant.plan.monthlyPrice
+                        qTenant.plan.price,
+                        qTenant.plan.billingCycle
                 ))
                 .from(qTenant)
                 .where(qTenant.deletedAt.isNull()
@@ -191,12 +198,14 @@ public class TenantQueryRepository {
 
         for (TenantRevenueProjection projection : results) {
             LocalDateTime createdAt = projection.getCreatedAt();
-            Double monthlyPrice = projection.getMonthlyPrice();
+            Double price = projection.getPrice();
+            BillingCycle billingCycle = projection.getBillingCycle();
 
-            if (createdAt != null && monthlyPrice != null) {
+            if (createdAt != null && price != null) {
                 // calculate number of months from when creating tenant to now
                 long months = Math.max(1, ChronoUnit.MONTHS.between(createdAt, now) + 1);
-                totalRevenue += months * monthlyPrice;
+                double monthlyEquivalent = billingCycle == BillingCycle.YEARLY ? price / 12.0 : price;
+                totalRevenue += months * monthlyEquivalent;
             }
         }
 
@@ -265,14 +274,37 @@ public class TenantQueryRepository {
     public Double calculateChurnRate() {
         QTenant qTenant = QTenant.tenant;
 
-        Long totalTenants = queryFactory.select(qTenant.count())
-                .from(qTenant)
-                .fetchOne();
+        LocalDateTime now = DateTimeUtil.nowUtc();
+        int currentMonth = now.getMonthValue();
+        int startMonthOfQuarter = ((currentMonth - 1) / 3) * 3 + 1;
+        LocalDateTime startOfQuarter = LocalDateTime.of(now.getYear(), startMonthOfQuarter, 1, 0, 0, 0);
+        LocalDateTime endOfQuarter = startOfQuarter.plusMonths(3);
 
         Long churnedTenants = queryFactory.select(qTenant.count())
                 .from(qTenant)
-                .where(qTenant.status.eq(TenantStatus.INACTIVE)
-                        .or(qTenant.deletedAt.isNotNull()))
+                .where(
+                        (qTenant.deletedAt.goe(startOfQuarter).and(qTenant.deletedAt.lt(endOfQuarter)))
+                        .or(
+                                qTenant.status.eq(TenantStatus.INACTIVE)
+                                        .and(qTenant.deletedAt.isNull())
+                                        .and(qTenant.updatedAt.goe(startOfQuarter).and(qTenant.updatedAt.lt(endOfQuarter)))
+                        )
+                )
+                .fetchOne();
+
+        BooleanExpression churnedBeforeStart = qTenant.deletedAt.lt(startOfQuarter)
+                .or(
+                        qTenant.status.eq(TenantStatus.INACTIVE)
+                                .and(qTenant.deletedAt.isNull())
+                                .and(qTenant.updatedAt.lt(startOfQuarter))
+                );
+
+        Long totalTenants = queryFactory.select(qTenant.count())
+                .from(qTenant)
+                .where(
+                        qTenant.createdAt.lt(endOfQuarter)
+                                .and(churnedBeforeStart.not())
+                )
                 .fetchOne();
 
         return ((double) churnedTenants / totalTenants) * 100.0;
@@ -293,7 +325,12 @@ public class TenantQueryRepository {
     @Transactional(readOnly = true)
     public Double calculateMonthlyActivePlanRevenue() {
         QTenant qTenant = QTenant.tenant;
-        Double sum = queryFactory.select(qTenant.plan.monthlyPrice.sum())
+        NumberExpression<Double> mrrContribution = new CaseBuilder()
+                .when(qTenant.plan.billingCycle.eq(BillingCycle.YEARLY))
+                .then(qTenant.plan.price.divide(12.0))
+                .otherwise(qTenant.plan.price);
+
+        Double sum = queryFactory.select(mrrContribution.sum())
                 .from(qTenant)
                 .where(qTenant.status.eq(TenantStatus.ACTIVE)
                         .and(qTenant.deletedAt.isNull()))
@@ -311,7 +348,12 @@ public class TenantQueryRepository {
                 .withSecond(0)
                 .withNano(0);
 
-        Double sum = queryFactory.select(qTenant.plan.monthlyPrice.sum())
+        NumberExpression<Double> mrrContribution = new CaseBuilder()
+                .when(qTenant.plan.billingCycle.eq(BillingCycle.YEARLY))
+                .then(qTenant.plan.price.divide(12.0))
+                .otherwise(qTenant.plan.price);
+
+        Double sum = queryFactory.select(mrrContribution.sum())
                 .from(qTenant)
                 .where(qTenant.status.eq(TenantStatus.ACTIVE)
                         .and(qTenant.createdAt.lt(startOfCurrentMonth))
