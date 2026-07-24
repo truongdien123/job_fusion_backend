@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface JobCriteriaService {
 
-    JobCriteriaResponse createJobCriteria(JobCriteriaRequest request);
+    List<JobCriteriaResponse> createJobCriteria(List<JobCriteriaRequest> requests);
 
     JobCriteriaResponse getJobCriteriaDetail(UUID id);
 

@@ -27,4 +27,10 @@ public final class ErrorCode {
     public static final String INVALID_SALARY_RANGE = "salary_max_must_be_greater_than_or_equal_to_salary_min";
     public static final String COMPANY_NAME_ALREADY_EXISTS = "company_name_already_exists";
     public static final String JOB_CRITERIA_NOT_FOUND = "job_criteria_not_found";
+    public static final String INVALID_JOB_CRITERIA = "invalid_job_criteria";
+    public static final String INVALID_CRITERION_NAME = "criterion_name_is_required";
+    public static final String INVALID_CRITERION_WEIGHT = "weight_must_be_positive";
+    public static final String DUPLICATE_CRITERION_NAME = "criterion_name_must_be_unique";
+    public static final String INVALID_TOTAL_WEIGHT = "total_weight_must_be_exactly_100";
+    public static final String DOMAIN_ALREADY_EXISTS = "domain_already_exists";
 }

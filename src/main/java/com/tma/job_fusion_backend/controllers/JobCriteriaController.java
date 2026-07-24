@@ -26,8 +26,8 @@ public class JobCriteriaController {
 
     @PostMapping
     @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR})
-    public ResponseEntity<?> createJobCriteria(@Valid @RequestBody JobCriteriaRequest request) {
-        JobCriteriaResponse response = jobCriteriaService.createJobCriteria(request);
+    public ResponseEntity<?> createJobCriteria(@RequestBody List<JobCriteriaRequest> requests) {
+        List<JobCriteriaResponse> response = jobCriteriaService.createJobCriteria(requests);
         return ResponseUtil.success("Create job criteria successfully", response);
     }
 
