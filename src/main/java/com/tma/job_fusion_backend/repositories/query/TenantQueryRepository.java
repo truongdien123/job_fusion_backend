@@ -180,7 +180,7 @@ public class TenantQueryRepository {
     public Double calculateTotalRevenue() {
         QTenant qTenant = QTenant.tenant;
 
-        // get price and billing cycle of active tenants using projection constructor
+        // Fetch active tenants' createdAt, deletedAt, price, and billingCycle details
         List<TenantRevenueProjection> results = queryFactory.select(Projections.constructor(
                         TenantRevenueProjection.class,
                         qTenant.createdAt,
@@ -202,9 +202,13 @@ public class TenantQueryRepository {
             BillingCycle billingCycle = projection.getBillingCycle();
 
             if (createdAt != null && price != null) {
-                // calculate number of months from when creating tenant to now
+                // Calculate used months: from createdAt to now (rounded up to at least 1 month)
                 long months = Math.max(1, ChronoUnit.MONTHS.between(createdAt, now) + 1);
+                
+                // Convert plan price to monthly equivalent (divide by 12 for YEARLY plans)
                 double monthlyEquivalent = billingCycle == BillingCycle.YEARLY ? price / 12.0 : price;
+                
+                // Accumulate tenant revenue: months * monthly equivalent price
                 totalRevenue += months * monthlyEquivalent;
             }
         }
@@ -228,7 +232,7 @@ public class TenantQueryRepository {
         QUser qUser = QUser.user;
         QUserRole qUserRole = QUserRole.userRole;
 
-        // count user by tenant id excluding tenant admin
+        // Subquery to count the actual number of employees of the tenant (excluding Tenant Admin)
         JPQLQuery<Long> userCountSubquery = JPAExpressions.select(qUser.count())
                 .from(qUser)
                 .where(qUser.tenant.id.eq(qTenant.id)
@@ -240,7 +244,7 @@ public class TenantQueryRepository {
                                                 .and(qUserRole.deletedAt.isNull()))
                         )));
 
-        // get active user and max staff of tenant
+        // Get the active users count and max staff limit of active tenants
         List<TenantUsageProjection> results = queryFactory.select(Projections.constructor(
                         TenantUsageProjection.class,
                         userCountSubquery,
@@ -262,11 +266,13 @@ public class TenantQueryRepository {
             Long activeUsers = projection.getActiveUsers();
             Integer maxUsers = projection.getMaxUsers();
             if (activeUsers != null && maxUsers != null && maxUsers > 0) {
+                // Efficiency of one Tenant = active users / max staff account limit
                 totalUsage += (double) activeUsers / maxUsers;
                 validCount++;
             }
         }
 
+        // Return average usage efficiency across all active tenants (in %)
         return validCount > 0 ? (totalUsage / validCount) * 100.0 : 0.0;
     }
 
@@ -274,12 +280,14 @@ public class TenantQueryRepository {
     public Double calculateChurnRate() {
         QTenant qTenant = QTenant.tenant;
 
+        // Determine the time boundary of the current quarter
         LocalDateTime now = DateTimeUtil.nowUtc();
         int currentMonth = now.getMonthValue();
         int startMonthOfQuarter = ((currentMonth - 1) / 3) * 3 + 1;
         LocalDateTime startOfQuarter = LocalDateTime.of(now.getYear(), startMonthOfQuarter, 1, 0, 0, 0);
         LocalDateTime endOfQuarter = startOfQuarter.plusMonths(3);
 
+        // Numerator: Count tenants deleted or inactivated during the current quarter
         Long churnedTenants = queryFactory.select(qTenant.count())
                 .from(qTenant)
                 .where(
@@ -292,6 +300,7 @@ public class TenantQueryRepository {
                 )
                 .fetchOne();
 
+        // Condition checking if tenant churned before the current quarter started
         BooleanExpression churnedBeforeStart = qTenant.deletedAt.isNotNull().and(qTenant.deletedAt.lt(startOfQuarter))
                 .or(
                         qTenant.status.eq(TenantStatus.INACTIVE)
@@ -300,6 +309,7 @@ public class TenantQueryRepository {
                                 .and(qTenant.updatedAt.lt(startOfQuarter))
                 );
 
+        // Denominator: Count total tenants created before quarter end and not churned before start of quarter
         Long totalTenants = queryFactory.select(qTenant.count())
                 .from(qTenant)
                 .where(
@@ -308,6 +318,7 @@ public class TenantQueryRepository {
                 )
                 .fetchOne();
 
+        // Churn Rate (%) = (Churned Tenants in Quarter / Total Tenants present in Quarter) * 100%
         return ((double) churnedTenants / totalTenants) * 100.0;
     }
 
@@ -325,11 +336,14 @@ public class TenantQueryRepository {
     @Transactional(readOnly = true)
     public Double calculateMonthlyActivePlanRevenue() {
         QTenant qTenant = QTenant.tenant;
+        
+        // Calculate Monthly Recurring Revenue (MRR) contribution: divide by 12 for YEARLY plans, otherwise use price directly
         NumberExpression<Double> mrrContribution = new CaseBuilder()
                 .when(qTenant.plan.billingCycle.eq(BillingCycle.YEARLY))
                 .then(qTenant.plan.price.divide(12.0))
                 .otherwise(qTenant.plan.price);
 
+        // Sum current Monthly Recurring Revenue (MRR) of active tenants
         Double sum = queryFactory.select(mrrContribution.sum())
                 .from(qTenant)
                 .where(qTenant.status.eq(TenantStatus.ACTIVE)
@@ -341,6 +355,7 @@ public class TenantQueryRepository {
     @Transactional(readOnly = true)
     public Double calculateMonthlyActivePlanRevenueLastMonth() {
         QTenant qTenant = QTenant.tenant;
+        // Get the first day of the current month at 00:00:00
         LocalDateTime startOfCurrentMonth = DateTimeUtil.nowUtc()
                 .withDayOfMonth(1)
                 .withHour(0)
@@ -348,11 +363,13 @@ public class TenantQueryRepository {
                 .withSecond(0)
                 .withNano(0);
 
+        // Calculate MRR contribution for the previous month
         NumberExpression<Double> mrrContribution = new CaseBuilder()
                 .when(qTenant.plan.billingCycle.eq(BillingCycle.YEARLY))
                 .then(qTenant.plan.price.divide(12.0))
                 .otherwise(qTenant.plan.price);
 
+        // Sum previous month's MRR of active tenants created before this month
         Double sum = queryFactory.select(mrrContribution.sum())
                 .from(qTenant)
                 .where(qTenant.status.eq(TenantStatus.ACTIVE)

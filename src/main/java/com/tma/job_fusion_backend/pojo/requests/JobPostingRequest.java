@@ -45,7 +45,6 @@ public class JobPostingRequest {
     @NotBlank(message = "Requirements is required")
     private String requirements;
 
-    @NotBlank(message = "Benefit is required")
     private String benefits;
 
     @DecimalMin(value = "0.0", message = "Salary min must be greater than or equal to 0")

@@ -60,4 +60,11 @@ public class JobPostingController {
         jobPostingService.deleteJobPosting(id);
         return ResponseUtil.success("Delete job posting successfully", Boolean.TRUE);
     }
+
+    @GetMapping(EndpointConstant.ENDPOINT_CHECK_TITLE)
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR})
+    public ResponseEntity<?> checkTitleUniqueness(@RequestParam String title, @RequestParam(required = false) UUID excludeId) {
+        jobPostingService.checkTitleUniqueness(title, excludeId);
+        return ResponseUtil.success("Job title is unique", Boolean.TRUE);
+    }
 }
