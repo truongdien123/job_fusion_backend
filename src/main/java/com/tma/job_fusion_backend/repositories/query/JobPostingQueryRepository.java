@@ -7,7 +7,11 @@ import java.util.ArrayList;
 import org.springframework.data.domain.Sort;
 import com.tma.job_fusion_backend.models.QJobPosting;
 import com.tma.job_fusion_backend.models.JobPosting;
+import com.tma.job_fusion_backend.models.QCandidateApplication;
+import com.tma.job_fusion_backend.enums.JobStatus;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.pojo.dtos.JobPostingFilter;
+import com.tma.job_fusion_backend.pojo.responses.DashboardStatsJobPostingResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -17,7 +21,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Repository
@@ -101,5 +107,42 @@ public class JobPostingQueryRepository {
             specifiers.add(qJobPosting.createdAt.desc());
         }
         return specifiers.toArray(new OrderSpecifier<?>[0]);
+    }
+
+    @Transactional(readOnly = true)
+    public DashboardStatsJobPostingResponse getJobPostingStats(UUID tenantId, int soonDays) {
+        QJobPosting qJobPosting = QJobPosting.jobPosting;
+        QCandidateApplication qCandidateApplication = QCandidateApplication.candidateApplication;
+
+        LocalDateTime now = DateTimeUtil.nowUtc();
+        LocalDateTime soonLimit = now.plusDays(soonDays);
+
+        Long totalActivePostings = queryFactory.select(qJobPosting.count())
+                .from(qJobPosting)
+                .where(qJobPosting.tenant.id.eq(tenantId)
+                        .and(qJobPosting.status.eq(JobStatus.OPEN))
+                        .and(qJobPosting.deletedAt.isNull()))
+                .fetchOne();
+
+        Long totalApplicants = queryFactory.select(qCandidateApplication.count())
+                .from(qCandidateApplication)
+                .where(qCandidateApplication.job.tenant.id.eq(tenantId)
+                        .and(qCandidateApplication.deletedAt.isNull())
+                        .and(qCandidateApplication.job.deletedAt.isNull()))
+                .fetchOne();
+
+        Long postingsExpiringSoon = queryFactory.select(qJobPosting.count())
+                .from(qJobPosting)
+                .where(qJobPosting.tenant.id.eq(tenantId)
+                        .and(qJobPosting.status.eq(JobStatus.OPEN))
+                        .and(qJobPosting.deletedAt.isNull())
+                        .and(qJobPosting.applicationDeadline.between(now, soonLimit)))
+                .fetchOne();
+
+        return DashboardStatsJobPostingResponse.builder()
+                .totalActivePostings(totalActivePostings)
+                .totalApplicants(totalApplicants)
+                .postingsExpiringSoon(postingsExpiringSoon)
+                .build();
     }
 }

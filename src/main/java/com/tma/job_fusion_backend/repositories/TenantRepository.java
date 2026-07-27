@@ -21,4 +21,6 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
     boolean existsByDomainIgnoreCaseAndDeletedAtIsNull(String domain);
 
     boolean existsByDomainIgnoreCaseAndIdNotAndDeletedAtIsNull(String domain, UUID id);
+
+    boolean existsByPlanIdAndDeletedAtIsNull(UUID planId);
 }

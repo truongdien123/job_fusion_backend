@@ -33,4 +33,5 @@ public final class ErrorCode {
     public static final String DUPLICATE_CRITERION_NAME = "criterion_name_must_be_unique";
     public static final String INVALID_TOTAL_WEIGHT = "total_weight_must_be_exactly_100";
     public static final String DOMAIN_ALREADY_EXISTS = "domain_already_exists";
+    public static final String PLAN_IN_USE = "plan_is_currently_in_use";
 }

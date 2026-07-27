@@ -13,4 +13,5 @@ public interface PlanService {
     Page<PlanResponse> getListPlan(PlanFilter filter, Pageable pageable);
     PlanResponse getPlanDetail(UUID id);
     PlanResponse updatePlan(UUID id, PlanRequest request);
+    void deletePlan(UUID id);
 }

@@ -3,15 +3,23 @@ package com.tma.job_fusion_backend.services.impl;
 import com.tma.job_fusion_backend.models.Plan;
 import com.tma.job_fusion_backend.pojo.responses.DashboardStatsTenantResponse;
 import com.tma.job_fusion_backend.pojo.responses.DashboardStatsPlanResponse;
+import com.tma.job_fusion_backend.pojo.responses.DashboardStatsJobPostingResponse;
 import com.tma.job_fusion_backend.repositories.query.TenantQueryRepository;
 import com.tma.job_fusion_backend.repositories.query.PlanQueryRepository;
+import com.tma.job_fusion_backend.repositories.query.JobPostingQueryRepository;
 import com.tma.job_fusion_backend.services.DashboardService;
+import com.tma.job_fusion_backend.utils.ValidationUtil;
+import com.tma.job_fusion_backend.components.UserPrincipal;
+import com.tma.job_fusion_backend.commons.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +27,8 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final TenantQueryRepository tenantQueryRepository;
     private final PlanQueryRepository planQueryRepository;
+    private final JobPostingQueryRepository jobPostingQueryRepository;
+    private final ValidationUtil validationUtil;
 
     @Override
     @Transactional(readOnly = true)
@@ -88,5 +98,18 @@ public class DashboardServiceImpl implements DashboardService {
                 .renewalRate(renewalRate)
                 .renewalRateTrend(renewalRateTrend)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DashboardStatsJobPostingResponse getDashboardStatsJobPosting() {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        UUID tenantId = currentUser.getTenantId();
+
+        if (ObjectUtils.isEmpty(tenantId)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        return jobPostingQueryRepository.getJobPostingStats(tenantId, 7);
     }
 }
