@@ -25,6 +25,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
+import com.tma.job_fusion_backend.exceptions.NotFoundException;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -54,7 +58,6 @@ public class ActivityLogServiceImpl implements ActivityLogService {
         ActivityLogFilter filter = (ObjectUtils.isNotEmpty(request) && ObjectUtils.isNotEmpty(request.getFilters()))
                 ? request.getFilters()
                 : new ActivityLogFilter();
-        filter.setTenantId(tenantId);
 
         Pageable pageable = request.toPageable();
         Page<ActivityLog> logPage = activityLogQueryRepository.findAllActivityLogs(filter, pageable);
@@ -101,5 +104,30 @@ public class ActivityLogServiceImpl implements ActivityLogService {
         }
 
         return request.getRemoteAddr();
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllActivityLog(UUID staffId) {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+
+        if (!currentUser.hasRole(RoleConstant.TENANT_ADMIN)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        UUID tenantId = currentUser.getTenantId();
+        if (ObjectUtils.isEmpty(tenantId)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        User staff = userRepository.findByIdAndDeletedAtIsNull(staffId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+
+        if (ObjectUtils.isEmpty(staff.getTenant()) || !tenantId.equals(staff.getTenant().getId())) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        LocalDateTime now = DateTimeUtil.nowUtc();
+        activityLogQueryRepository.softDeleteAllByUserId(staffId, now, currentUser.getId());
     }
 }

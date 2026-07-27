@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface ActivityLogService {
     Page<ActivityLogResponse> getListActivityLog(PagingRequest<ActivityLogFilter> request);
     void log(UUID userId, EventType eventType, String description);
+    void deleteAllActivityLog(UUID staffId);
 }

@@ -14,7 +14,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
@@ -48,6 +50,9 @@ public class ActivityLogQueryRepository {
             if (ObjectUtils.isNotEmpty(filter.getTenantId())) {
                 builder.and(qActivityLog.user.tenant.id.eq(filter.getTenantId()));
             }
+            if (ObjectUtils.isNotEmpty(filter.getUserId())) {
+                builder.and(qActivityLog.user.id.eq(filter.getUserId()));
+            }
         }
 
         List<ActivityLog> content = queryFactory.selectFrom(qActivityLog)
@@ -64,5 +69,17 @@ public class ActivityLogQueryRepository {
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    @Transactional
+    public void softDeleteAllByUserId(UUID userId, LocalDateTime deletedAt, UUID updatedBy) {
+        QActivityLog qActivityLog = QActivityLog.activityLog;
+
+        queryFactory.update(qActivityLog)
+                .set(qActivityLog.deletedAt, deletedAt)
+                .set(qActivityLog.updatedBy, updatedBy)
+                .where(qActivityLog.user.id.eq(userId)
+                        .and(qActivityLog.deletedAt.isNull()))
+                .execute();
     }
 }

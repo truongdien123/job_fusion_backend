@@ -13,10 +13,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_ACTIVITY_LOG)
@@ -32,5 +36,12 @@ public class ActivityLogController {
         Page<ActivityLogResponse> result = activityLogService.getListActivityLog(request);
         PageResponse<ActivityLogResponse> response = PageResponse.of(result);
         return ResponseUtil.success("Get list activity log successfully", response);
+    }
+
+    @DeleteMapping(EndpointConstant.ENDPOINT_STAFF_ID)
+    @RequireRoles(RoleConstant.TENANT_ADMIN)
+    public ResponseEntity<?> deleteAllActivityLog(@PathVariable UUID id) {
+        activityLogService.deleteAllActivityLog(id);
+        return ResponseUtil.success("Delete all activity logs of staff successfully", Boolean.TRUE);
     }
 }
