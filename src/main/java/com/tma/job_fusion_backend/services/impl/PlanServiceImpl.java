@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.services.impl;
 
 import com.tma.job_fusion_backend.commons.ErrorCode;
+import com.tma.job_fusion_backend.enums.PlanStatus;
 import com.tma.job_fusion_backend.exceptions.BadRequestException;
 import com.tma.job_fusion_backend.exceptions.NotFoundException;
 import com.tma.job_fusion_backend.mappers.PlanMapper;
@@ -9,8 +10,10 @@ import com.tma.job_fusion_backend.pojo.requests.PlanRequest;
 import com.tma.job_fusion_backend.pojo.responses.PlanResponse;
 import com.tma.job_fusion_backend.pojo.dtos.PlanFilter;
 import com.tma.job_fusion_backend.repositories.PlanRepository;
+import com.tma.job_fusion_backend.repositories.TenantRepository;
 import com.tma.job_fusion_backend.repositories.query.PlanQueryRepository;
 import com.tma.job_fusion_backend.services.PlanService;
+import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.JsonUtil;
 import com.tma.job_fusion_backend.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ public class PlanServiceImpl implements PlanService {
     private final PlanQueryRepository planQueryRepository;
     private final PlanMapper planMapper;
     private final JwtUtil jwtUtil;
+    private final TenantRepository tenantRepository;
 
     @Override
     @Transactional
@@ -115,5 +119,21 @@ public class PlanServiceImpl implements PlanService {
         PlanResponse response = planMapper.toPlanResponse(plan);
         response.setFeatures(JsonUtil.convertJsonToFeatures(plan.getFeature()));
         return response;
+    }
+
+    @Override
+    @Transactional
+    public void deletePlan(UUID id) {
+        Plan plan = findPlanById(id);
+
+        if (tenantRepository.existsByPlanIdAndDeletedAtIsNull(id)) {
+            throw new BadRequestException(ErrorCode.PLAN_IN_USE);
+        }
+
+        plan.setDeletedAt(DateTimeUtil.nowUtc());
+        plan.setStatus(PlanStatus.INACTIVE);
+        plan.setUpdatedBy(jwtUtil.getCurrentUserId());
+
+        planRepository.save(plan);
     }
 }

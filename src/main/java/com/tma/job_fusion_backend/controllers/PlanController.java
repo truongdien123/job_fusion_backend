@@ -57,4 +57,11 @@ public class PlanController {
         PlanResponse response = planService.updatePlan(id, request);
         return ResponseUtil.success("Update plan successfully", response);
     }
+
+    @DeleteMapping(EndpointConstant.ENDPOINT_ID)
+    @RequireRoles(RoleConstant.SUPER_ADMIN)
+    public ResponseEntity<?> deletePlan(@PathVariable UUID id) {
+        planService.deletePlan(id);
+        return ResponseUtil.success("Delete plan successfully", Boolean.TRUE);
+    }
 }
