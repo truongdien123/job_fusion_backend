@@ -17,4 +17,5 @@ public class ActivityLogFilter {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private UUID tenantId;
+    private UUID userId;
 }
