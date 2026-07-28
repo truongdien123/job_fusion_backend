@@ -16,14 +16,19 @@ import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.UUID;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,26 +52,31 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
             throw new BadRequestException(ErrorCode.INVALID_JOB_CRITERIA);
         }
 
-        // Validate all requests belong to the same jobId
-        for (JobCriteriaRequest req : requests) {
-            if (!jobId.equals(req.getJobId())) {
-                throw new BadRequestException(ErrorCode.INVALID_JOB_CRITERIA);
-            }
-        }
-
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
         JobPosting jobPosting = findJobPostingById(jobId);
         validateTenantAccess(currentUser, jobPosting);
 
-        // Validation checks
+        // Fetch existing active criteria for this jobId
+        List<JobCriteria> existing = jobCriteriaRepository.findByJobIdAndDeletedAtIsNull(jobId);
+
+        // Put existing in a Map for quick lookup
+        Map<UUID, JobCriteria> existingMap = existing.stream()
+                .collect(Collectors.toMap(JobCriteria::getId, Function.identity()));
+
         double totalWeight = 0.0;
         Set<String> names = new HashSet<>();
+        List<JobCriteria> jobCriteriaList = new ArrayList<>();
+        Set<UUID> processedIds = new HashSet<>();
 
+        // Combined validation and processing loop
         for (JobCriteriaRequest req : requests) {
-            if (req.getCriterionName() == null || req.getCriterionName().trim().isEmpty()) {
+            if (!jobId.equals(req.getJobId())) {
+                throw new BadRequestException(ErrorCode.INVALID_JOB_CRITERIA);
+            }
+            if (StringUtils.isEmpty(req.getCriterionName())) {
                 throw new BadRequestException(ErrorCode.INVALID_CRITERION_NAME);
             }
-            if (req.getWeight() == null || req.getWeight() <= 0.0) {
+            if (ObjectUtils.isEmpty(req.getWeight()) || req.getWeight() <= 0.0) {
                 throw new BadRequestException(ErrorCode.INVALID_CRITERION_WEIGHT);
             }
 
@@ -76,6 +86,22 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
             }
 
             totalWeight += req.getWeight();
+
+            if (ObjectUtils.isNotEmpty(req.getId())) {
+                JobCriteria jobCriteria = existingMap.get(req.getId());
+                if (ObjectUtils.isEmpty(jobCriteria)) {
+                    throw new BadRequestException(ErrorCode.JOB_CRITERIA_NOT_FOUND);
+                }
+                jobCriteriaMapper.updateEntityFromRequest(req, jobCriteria);
+                jobCriteria.setUpdatedBy(currentUser.getId());
+                jobCriteriaList.add(jobCriteria);
+                processedIds.add(req.getId());
+            } else {
+                JobCriteria jobCriteria = jobCriteriaMapper.toEntity(req);
+                jobCriteria.setJob(jobPosting);
+                jobCriteria.setCreatedBy(currentUser.getId());
+                jobCriteriaList.add(jobCriteria);
+            }
         }
 
         // Total weight must be exactly 100
@@ -83,30 +109,22 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
             throw new BadRequestException(ErrorCode.INVALID_TOTAL_WEIGHT);
         }
 
-        // Soft delete all existing criteria for this jobId
-        List<JobCriteria> existing = jobCriteriaRepository.findByJobIdAndDeletedAtIsNull(jobId);
-        if (!existing.isEmpty()) {
-            java.time.LocalDateTime now = DateTimeUtil.nowUtc();
-            for (JobCriteria ec : existing) {
-                ec.setDeletedAt(now);
-                ec.setUpdatedBy(currentUser.getId());
-            }
-            jobCriteriaRepository.saveAll(existing);
-        }
+        // Soft delete existing criteria that are not present in requests
+        LocalDateTime now = DateTimeUtil.nowUtc();
+        existing.stream()
+                .filter(jobCriteria -> !processedIds.contains(jobCriteria.getId()))
+                .forEach(jobCriteria -> {
+                    jobCriteria.setDeletedAt(now);
+                    jobCriteria.setUpdatedBy(currentUser.getId());
+                    jobCriteriaList.add(jobCriteria);
+                });
 
-        // Save new criteria
-        List<JobCriteria> newCriteriaList = requests.stream()
-                .map(req -> {
-                    JobCriteria jc = jobCriteriaMapper.toEntity(req);
-                    jc.setJob(jobPosting);
-                    jc.setCreatedBy(currentUser.getId());
-                    return jc;
-                })
-                .collect(Collectors.toList());
+        // Save all changes
+        List<JobCriteria> savedList = jobCriteriaRepository.saveAll(jobCriteriaList);
 
-        List<JobCriteria> savedList = jobCriteriaRepository.saveAll(newCriteriaList);
-
+        // Filter and return only the active (non-deleted) criteria
         return savedList.stream()
+                .filter(jobCriteria -> ObjectUtils.isEmpty(jobCriteria.getDeletedAt()))
                 .map(jobCriteriaMapper::toResponse)
                 .collect(Collectors.toList());
     }
