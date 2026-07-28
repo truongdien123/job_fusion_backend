@@ -185,6 +185,24 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
         jobCriteriaRepository.save(jobCriteria);
     }
 
+    @Override
+    @Transactional
+    public void deleteAllJobCriteriaByJobId(UUID jobId) {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        JobPosting jobPosting = findJobPostingById(jobId);
+        validateTenantAccess(currentUser, jobPosting);
+
+        List<JobCriteria> criteriaList = jobCriteriaRepository.findByJobIdAndDeletedAtIsNull(jobId);
+        if (ObjectUtils.isNotEmpty(criteriaList)) {
+            LocalDateTime now = DateTimeUtil.nowUtc();
+            for (JobCriteria jc : criteriaList) {
+                jc.setDeletedAt(now);
+                jc.setUpdatedBy(currentUser.getId());
+            }
+            jobCriteriaRepository.saveAll(criteriaList);
+        }
+    }
+
     private JobPosting findJobPostingById(UUID jobId) {
         return jobPostingRepository.findByIdAndDeletedAtIsNull(jobId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.JOB_POSTING_NOT_FOUND));

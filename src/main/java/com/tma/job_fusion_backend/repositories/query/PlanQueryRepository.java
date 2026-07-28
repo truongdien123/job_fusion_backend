@@ -125,18 +125,12 @@ public class PlanQueryRepository {
     @Transactional(readOnly = true)
     public Optional<Plan> findTopTierPlan() {
         QPlan qPlan = QPlan.plan;
-        QTenant qTenant = QTenant.tenant;
         Plan plan = queryFactory.select(qPlan)
                 .from(qPlan)
-                .leftJoin(qTenant).on(qTenant.plan.id.eq(qPlan.id)
-                        .and(qTenant.status.eq(TenantStatus.ACTIVE))
-                        .and(qTenant.deletedAt.isNull()))
                 .where(qPlan.status.eq(PlanStatus.ACTIVE)
                         .and(qPlan.deletedAt.isNull()))
-                .groupBy(qPlan.id)
-                .orderBy(qTenant.count().desc(), qPlan.price.desc())
-                .limit(1)
-                .fetchOne();
+                .orderBy(qPlan.price.desc())
+                .fetchFirst();
         return Optional.ofNullable(plan);
     }
 }

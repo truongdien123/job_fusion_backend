@@ -18,4 +18,6 @@ public interface JobCriteriaService {
 
     void deleteJobCriteria(UUID id);
 
+    void deleteAllJobCriteriaByJobId(UUID jobId);
+
 }
