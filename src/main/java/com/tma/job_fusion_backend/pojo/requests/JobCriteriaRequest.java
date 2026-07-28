@@ -14,6 +14,8 @@ import java.util.UUID;
 @Builder
 public class JobCriteriaRequest {
 
+    private UUID id;
+
     @NotNull(message = "Job ID is required")
     private UUID jobId;
 

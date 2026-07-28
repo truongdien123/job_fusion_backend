@@ -38,7 +38,7 @@ public class JobCriteriaController {
         return ResponseUtil.success("Get job criteria detail successfully", response);
     }
 
-    @GetMapping("/job/{jobId}")
+    @GetMapping(EndpointConstant.ENDPOINT_JOB_ID)
     @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER})
     public ResponseEntity<?> getJobCriteriaByJobId(@PathVariable UUID jobId) {
         List<JobCriteriaResponse> response = jobCriteriaService.getJobCriteriaByJobId(jobId);
@@ -57,6 +57,13 @@ public class JobCriteriaController {
     public ResponseEntity<?> deleteJobCriteria(@PathVariable UUID id) {
         jobCriteriaService.deleteJobCriteria(id);
         return ResponseUtil.success("Delete job criteria successfully", Boolean.TRUE);
+    }
+
+    @DeleteMapping(EndpointConstant.ENDPOINT_JOB_ID)
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR})
+    public ResponseEntity<?> deleteAllJobCriteriaByJobId(@PathVariable UUID jobId) {
+        jobCriteriaService.deleteAllJobCriteriaByJobId(jobId);
+        return ResponseUtil.success("Delete all job criteria successfully", Boolean.TRUE);
     }
 
 }
