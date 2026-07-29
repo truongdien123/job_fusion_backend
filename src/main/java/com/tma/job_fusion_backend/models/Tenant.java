@@ -1,6 +1,10 @@
 package com.tma.job_fusion_backend.models;
 
 import com.tma.job_fusion_backend.enums.TenantStatus;
+import com.tma.job_fusion_backend.enums.BillingCycle;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -41,5 +45,16 @@ public class Tenant extends BaseEntity {
 
     @Column(name = "expiration_date")
     private LocalDateTime expirationDate;
+
+    @Column(name = "price")
+    private Double price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_cycle")
+    private BillingCycle billingCycle;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private JsonNode feature;
 
 }

@@ -14,6 +14,7 @@ import com.tma.job_fusion_backend.repositories.UserRepository;
 import com.tma.job_fusion_backend.services.ActivityLogService;
 import com.tma.job_fusion_backend.utils.ValidationUtil;
 import com.tma.job_fusion_backend.enums.EventType;
+import com.tma.job_fusion_backend.enums.JobPostingAction;
 import com.tma.job_fusion_backend.models.User;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +69,12 @@ public class ActivityLogServiceImpl implements ActivityLogService {
     @Override
     @Transactional
     public void log(UUID userId, EventType eventType, String description) {
+        log(userId, eventType, description, null, null);
+    }
+
+    @Override
+    @Transactional
+    public void log(UUID userId, EventType eventType, String description, UUID jobPostingId, JobPostingAction action) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId).orElse(null);
         if (ObjectUtils.isEmpty(user)) {
             return;
@@ -79,6 +86,8 @@ public class ActivityLogServiceImpl implements ActivityLogService {
         log.setDescription(description);
         log.setIpAddress(getClientIp());
         log.setCreatedBy(userId);
+        log.setJobPostingId(jobPostingId);
+        log.setAction(action);
 
         activityLogRepository.save(log);
     }

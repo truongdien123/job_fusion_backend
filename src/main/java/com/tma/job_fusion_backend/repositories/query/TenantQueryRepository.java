@@ -119,8 +119,8 @@ public class TenantQueryRepository {
                         adminUserIdSubquery,
                         activeJobSubquery,
                         qTenant.maxActiveJobPosting,
-                        qTenant.plan.price,
-                        qTenant.plan.billingCycle,
+                        qTenant.price,
+                        qTenant.billingCycle,
                         qTenant.expirationDate,
                         qTenant.createdAt
                 ))
@@ -185,8 +185,8 @@ public class TenantQueryRepository {
                         TenantRevenueProjection.class,
                         qTenant.createdAt,
                         qTenant.deletedAt,
-                        qTenant.plan.price,
-                        qTenant.plan.billingCycle
+                        qTenant.price,
+                        qTenant.billingCycle
                 ))
                 .from(qTenant)
                 .where(qTenant.deletedAt.isNull()
@@ -205,8 +205,9 @@ public class TenantQueryRepository {
                 // Calculate used months: from createdAt to now (rounded up to at least 1 month)
                 long months = Math.max(1, ChronoUnit.MONTHS.between(createdAt, now) + 1);
                 
-                // Convert plan price to monthly equivalent (divide by 12 for YEARLY plans)
-                double monthlyEquivalent = billingCycle == BillingCycle.YEARLY ? price / 12.0 : price;
+                // Convert plan price to monthly equivalent (divide by 12 for YEARLY plans, 6 for SIX_MONTHLY plans)
+                double monthlyEquivalent = billingCycle == BillingCycle.YEARLY ? price / 12.0 
+                        : (billingCycle == BillingCycle.SIX_MONTHLY ? price / 6.0 : price);
                 
                 // Accumulate tenant revenue: months * monthly equivalent price
                 totalRevenue += months * monthlyEquivalent;
@@ -337,11 +338,13 @@ public class TenantQueryRepository {
     public Double calculateMonthlyActivePlanRevenue() {
         QTenant qTenant = QTenant.tenant;
         
-        // Calculate Monthly Recurring Revenue (MRR) contribution: divide by 12 for YEARLY plans, otherwise use price directly
+        // Calculate Monthly Recurring Revenue (MRR) contribution: divide by 12 for YEARLY plans, 6 for SIX_MONTHLY, otherwise use price directly
         NumberExpression<Double> mrrContribution = new CaseBuilder()
-                .when(qTenant.plan.billingCycle.eq(BillingCycle.YEARLY))
-                .then(qTenant.plan.price.divide(12.0))
-                .otherwise(qTenant.plan.price);
+                .when(qTenant.billingCycle.eq(BillingCycle.YEARLY))
+                .then(qTenant.price.divide(12.0))
+                .when(qTenant.billingCycle.eq(BillingCycle.SIX_MONTHLY))
+                .then(qTenant.price.divide(6.0))
+                .otherwise(qTenant.price);
 
         // Sum current Monthly Recurring Revenue (MRR) of active tenants
         Double sum = queryFactory.select(mrrContribution.sum())
@@ -365,9 +368,11 @@ public class TenantQueryRepository {
 
         // Calculate MRR contribution for the previous month
         NumberExpression<Double> mrrContribution = new CaseBuilder()
-                .when(qTenant.plan.billingCycle.eq(BillingCycle.YEARLY))
-                .then(qTenant.plan.price.divide(12.0))
-                .otherwise(qTenant.plan.price);
+                .when(qTenant.billingCycle.eq(BillingCycle.YEARLY))
+                .then(qTenant.price.divide(12.0))
+                .when(qTenant.billingCycle.eq(BillingCycle.SIX_MONTHLY))
+                .then(qTenant.price.divide(6.0))
+                .otherwise(qTenant.price);
 
         // Sum previous month's MRR of active tenants created before this month
         Double sum = queryFactory.select(mrrContribution.sum())

@@ -6,6 +6,7 @@ import com.tma.job_fusion_backend.enums.LocationType;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -50,4 +51,6 @@ public class JobPostingResponse {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    private List<JobPostingRevisionResponse> revisions;
 }
