@@ -74,10 +74,15 @@ public class TenantServiceImpl implements TenantService {
         tenant.setPlan(plan);
         tenant.setMaxStaffAccount(plan.getMaxStaffAccount());
         tenant.setMaxActiveJobPosting(plan.getMaxActiveJobPosting());
+        tenant.setPrice(plan.getPrice());
+        tenant.setBillingCycle(plan.getBillingCycle());
+        tenant.setFeature(plan.getFeature());
         tenant.setCreatedBy(jwtUtil.getCurrentUserId());
         tenant.setExpirationDate(plan.getBillingCycle() == BillingCycle.YEARLY
                 ? DateTimeUtil.nowUtc().plusDays(365)
-                : DateTimeUtil.nowUtc().plusDays(30));
+                : (plan.getBillingCycle() == BillingCycle.SIX_MONTHLY
+                    ? DateTimeUtil.nowUtc().plusDays(180)
+                    : DateTimeUtil.nowUtc().plusDays(30)));
         tenant.setCompanySize(0);
 
         Tenant savedTenant = tenantRepository.save(tenant);

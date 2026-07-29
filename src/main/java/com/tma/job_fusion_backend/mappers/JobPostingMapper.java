@@ -12,6 +12,7 @@ public interface JobPostingMapper {
 
     @Mapping(target = "tenantId", source = "tenant.id")
     @Mapping(target = "tenantName", source = "tenant.companyName")
+    @Mapping(target = "revisions", ignore = true)
     JobPostingResponse toResponse(JobPosting jobPosting);
 
     void updateEntityFromRequest(JobPostingRequest request, @MappingTarget JobPosting jobPosting);

@@ -36,6 +36,8 @@ public class TenantResponse {
         if (expirationDate != null) {
             if (billingCycle == BillingCycle.YEARLY) {
                 return expirationDate.minusDays(365);
+            } else if (billingCycle == BillingCycle.SIX_MONTHLY) {
+                return expirationDate.minusDays(180);
             }
             return expirationDate.minusDays(30);
         }

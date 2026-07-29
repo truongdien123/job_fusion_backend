@@ -1,0 +1,4 @@
+ALTER TABLE tenants ADD COLUMN price DOUBLE PRECISION;
+ALTER TABLE tenants ADD COLUMN billing_cycle VARCHAR(50);
+ALTER TABLE tenants ADD COLUMN feature JSONB;
+

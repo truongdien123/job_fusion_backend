@@ -15,12 +15,18 @@ import com.tma.job_fusion_backend.pojo.responses.JobPostingResponse;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import com.tma.job_fusion_backend.repositories.JobPostingRepository;
 import com.tma.job_fusion_backend.repositories.TenantRepository;
+import com.tma.job_fusion_backend.repositories.ActivityLogRepository;
 import com.tma.job_fusion_backend.repositories.query.JobPostingQueryRepository;
 import com.tma.job_fusion_backend.services.JobPostingService;
 import com.tma.job_fusion_backend.services.ActivityLogService;
 import com.tma.job_fusion_backend.enums.EventType;
+import com.tma.job_fusion_backend.enums.JobPostingAction;
+import com.tma.job_fusion_backend.models.ActivityLog;
+import com.tma.job_fusion_backend.pojo.responses.JobPostingRevisionResponse;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.ValidationUtil;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -41,6 +47,7 @@ public class JobPostingServiceImpl implements JobPostingService {
     private final JobPostingMapper jobPostingMapper;
     private final ValidationUtil validationUtil;
     private final ActivityLogService activityLogService;
+    private final ActivityLogRepository activityLogRepository;
 
     @Override
     @Transactional
@@ -72,10 +79,12 @@ public class JobPostingServiceImpl implements JobPostingService {
         activityLogService.log(
                 currentUser.getId(),
                 EventType.ACTION,
-                "Created job posting: " + savedJob.getTitle()
+                "Created job posting: " + savedJob.getTitle(),
+                savedJob.getId(),
+                JobPostingAction.CREATE
         );
 
-        return jobPostingMapper.toResponse(savedJob);
+        return toResponseWithRevisions(savedJob);
     }
 
     @Override
@@ -98,7 +107,7 @@ public class JobPostingServiceImpl implements JobPostingService {
         JobPosting jobPosting = findJobPostingById(id);
         validateTenantAccess(currentUser, jobPosting);
 
-        return jobPostingMapper.toResponse(jobPosting);
+        return toResponseWithRevisions(jobPosting);
     }
 
     @Override
@@ -115,12 +124,31 @@ public class JobPostingServiceImpl implements JobPostingService {
             validateActiveJobPostingLimit(jobPosting.getTenant());
         }
 
+        JobPostingAction action = JobPostingAction.UPDATE;
+        String description = "Updated job posting: " + jobPosting.getTitle();
+        if (targetStatus == JobStatus.OPEN && jobPosting.getStatus() != JobStatus.OPEN) {
+            action = JobPostingAction.OPEN;
+            description = "Opened job posting: " + jobPosting.getTitle();
+        } else if (targetStatus == JobStatus.CLOSED && jobPosting.getStatus() != JobStatus.CLOSED) {
+            action = JobPostingAction.CLOSE;
+            description = "Closed job posting: " + jobPosting.getTitle();
+        }
+
         jobPostingMapper.updateEntityFromRequest(request, jobPosting);
         jobPosting.setStatus(targetStatus);
         jobPosting.setUpdatedBy(currentUser.getId());
 
         JobPosting savedJob = jobPostingRepository.save(jobPosting);
-        return jobPostingMapper.toResponse(savedJob);
+
+        activityLogService.log(
+                currentUser.getId(),
+                EventType.ACTION,
+                description,
+                savedJob.getId(),
+                action
+        );
+
+        return toResponseWithRevisions(savedJob);
     }
 
     @Override
@@ -132,7 +160,15 @@ public class JobPostingServiceImpl implements JobPostingService {
 
         jobPosting.setDeletedAt(DateTimeUtil.nowUtc());
         jobPosting.setUpdatedBy(currentUser.getId());
-        jobPostingRepository.save(jobPosting);
+        JobPosting savedJob = jobPostingRepository.save(jobPosting);
+
+        activityLogService.log(
+                currentUser.getId(),
+                EventType.ACTION,
+                "Deleted job posting: " + jobPosting.getTitle(),
+                savedJob.getId(),
+                JobPostingAction.DELETE
+        );
     }
 
     private JobPosting findJobPostingById(UUID id) {
@@ -187,5 +223,34 @@ public class JobPostingServiceImpl implements JobPostingService {
         }
 
         validateTitleUniqueness(tenantId, title, excludeId);
+    }
+    private JobPostingResponse toResponseWithRevisions(JobPosting jobPosting) {
+        JobPostingResponse response = jobPostingMapper.toResponse(jobPosting);
+        List<ActivityLog> logs = activityLogRepository.findAllByJobPostingIdAndDeletedAtIsNullOrderByCreatedAtDesc(jobPosting.getId());
+        List<JobPostingRevisionResponse> revisions = logs.stream()
+                .filter(log -> log.getAction() != null)
+                .map(log -> {
+                    JobPostingAction action = log.getAction();
+                    String actionLabel = "";
+                    if (JobPostingAction.CREATE == action) {
+                        actionLabel = "Create Job Posting: \"" + jobPosting.getTitle() + "\"";
+                    } else if (JobPostingAction.UPDATE == action) {
+                        actionLabel = "Update Job Posting";
+                    } else if (JobPostingAction.OPEN == action) {
+                        actionLabel = "Open Job Posting";
+                    } else if (JobPostingAction.CLOSE == action) {
+                        actionLabel = "Closed Job Posting";
+                    } else if (JobPostingAction.DELETE == action) {
+                        actionLabel = "Deleted Job Posting";
+                    }
+                    return JobPostingRevisionResponse.builder()
+                            .action(actionLabel)
+                            .actorName(ObjectUtils.isNotEmpty(log.getUser()) ? log.getUser().getFullName() : null)
+                            .createdAt(log.getCreatedAt())
+                            .build();
+                })
+                .collect(Collectors.toList());
+        response.setRevisions(revisions);
+        return response;
     }
 }

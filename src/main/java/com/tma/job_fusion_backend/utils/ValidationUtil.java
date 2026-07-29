@@ -5,6 +5,7 @@ import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.components.UserPrincipal;
 import com.tma.job_fusion_backend.enums.TenantStatus;
 import com.tma.job_fusion_backend.enums.UserStatus;
+import com.tma.job_fusion_backend.enums.BillingCycle;
 import com.tma.job_fusion_backend.exceptions.NotActiveException;
 import com.tma.job_fusion_backend.exceptions.NotFoundException;
 import com.tma.job_fusion_backend.models.Plan;
@@ -66,7 +67,14 @@ public class ValidationUtil {
             tenant.setPlan(plan);
             tenant.setMaxStaffAccount(plan.getMaxStaffAccount());
             tenant.setMaxActiveJobPosting(plan.getMaxActiveJobPosting());
-            tenant.setExpirationDate(DateTimeUtil.nowUtc().plusDays(30));
+            tenant.setPrice(plan.getPrice());
+            tenant.setBillingCycle(plan.getBillingCycle());
+            tenant.setFeature(plan.getFeature());
+            tenant.setExpirationDate(plan.getBillingCycle() == BillingCycle.YEARLY
+                    ? DateTimeUtil.nowUtc().plusDays(365)
+                    : (plan.getBillingCycle() == BillingCycle.SIX_MONTHLY
+                        ? DateTimeUtil.nowUtc().plusDays(180)
+                        : DateTimeUtil.nowUtc().plusDays(30)));
         }
     }
 }
