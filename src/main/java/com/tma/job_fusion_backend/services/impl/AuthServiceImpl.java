@@ -198,7 +198,7 @@ public class AuthServiceImpl implements AuthService {
             throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
         }
 
-        if (UserType.TENANT == user.getType() && TenantStatus.INACTIVE == user.getTenant().getStatus()) {
+        if ((UserType.TENANT == user.getType() && TenantStatus.INACTIVE == user.getTenant().getStatus()) || UserStatus.DISABLED == user.getStatus()) {
             throw new ForbiddenException(ErrorCode.TENANT_INACTIVE);
         }
 
@@ -239,6 +239,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logout() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (ObjectUtils.isNotEmpty(authentication) && authentication.getPrincipal() instanceof UserPrincipal principal) {
+            User user = userRepository.findByIdAndDeletedAtIsNull(principal.getId()).orElse(null);
+            if (ObjectUtils.isNotEmpty(user) && UserType.TENANT == user.getType()) {
+                activityLogService.log(
+                        user.getId(),
+                        EventType.LOGOUT,
+                        "User logged out: " + user.getEmail()
+                );
+            }
+        }
         SecurityContextHolder.clearContext();
     }
 
