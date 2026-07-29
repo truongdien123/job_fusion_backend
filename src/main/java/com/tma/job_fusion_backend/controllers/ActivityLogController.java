@@ -13,7 +13,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,5 +45,15 @@ public class ActivityLogController {
     public ResponseEntity<?> deleteAllActivityLog(@PathVariable UUID id) {
         activityLogService.deleteAllActivityLog(id);
         return ResponseUtil.success("Delete all activity logs of staff successfully", Boolean.TRUE);
+    }
+
+    @GetMapping(EndpointConstant.ENDPOINT_STAFF_EXPORT)
+    @RequireRoles(RoleConstant.TENANT_ADMIN)
+    public ResponseEntity<byte[]> exportActivityLog(@PathVariable UUID id) {
+        byte[] data = activityLogService.exportActivityLogToExcel(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"activity_log_" + id + ".xlsx\"")
+                .header(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .body(data);
     }
 }

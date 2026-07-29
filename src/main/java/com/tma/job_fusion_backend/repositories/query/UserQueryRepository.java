@@ -49,9 +49,6 @@ public class UserQueryRepository {
                 predicate = predicate.and(
                         qUser.fullName.containsIgnoreCase(search)
                                 .or(qUser.email.containsIgnoreCase(search))
-                                .or(qUser.phone.containsIgnoreCase(search))
-                                .or(qUser.employeeCode.containsIgnoreCase(search))
-                                .or(qUser.jobTitle.containsIgnoreCase(search))
                 );
             }
             if (StringUtils.isNotEmpty(filter.getFullName())) {

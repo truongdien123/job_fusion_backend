@@ -64,6 +64,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_STAFF_ID = ENDPOINT_STAFF_BASE + ENDPOINT_ID;
     public static final String ENDPOINT_STAFF_RESEND_ACTIVATION = ENDPOINT_STAFF_BASE + ENDPOINT_ID + "/resend-activation";
     public static final String ENDPOINT_STAFF_LIMIT = ENDPOINT_STAFF_BASE + "/limit";
+    public static final String ENDPOINT_STAFF_EXPORT = ENDPOINT_STAFF_BASE + ENDPOINT_ID + "/export";
     public static final String ENDPOINT_CHECK_TITLE = "/check-title";
     public static final String ENDPOINT_JOB_ID = "/job/{jobId}";
 }

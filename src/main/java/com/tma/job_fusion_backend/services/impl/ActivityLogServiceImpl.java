@@ -24,6 +24,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 
 import org.springframework.transaction.annotation.Transactional;
 import com.tma.job_fusion_backend.exceptions.NotFoundException;
@@ -35,6 +40,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ActivityLogServiceImpl implements ActivityLogService {
+
+    private static final String EXCEL_FONT_NAME = "Calibri";
+    private static final String EXCEL_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     private final ActivityLogQueryRepository activityLogQueryRepository;
     private final ActivityLogMapper activityLogMapper;
@@ -115,9 +123,7 @@ public class ActivityLogServiceImpl implements ActivityLogService {
         return request.getRemoteAddr();
     }
 
-    @Override
-    @Transactional
-    public void deleteAllActivityLog(UUID staffId) {
+    private User validateAndGetStaff(UUID staffId) {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
 
         if (!currentUser.hasRole(RoleConstant.TENANT_ADMIN)) {
@@ -136,7 +142,109 @@ public class ActivityLogServiceImpl implements ActivityLogService {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
 
+        return staff;
+    }
+
+    private Font createFont(Workbook workbook, String fontName, short size, boolean bold, boolean italic) {
+        Font font = workbook.createFont();
+        font.setFontName(fontName);
+        font.setFontHeightInPoints(size);
+        font.setBold(bold);
+        font.setItalic(italic);
+        return font;
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllActivityLog(UUID staffId) {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        validateAndGetStaff(staffId);
         LocalDateTime now = DateTimeUtil.nowUtc();
         activityLogQueryRepository.softDeleteAllByUserId(staffId, now, currentUser.getId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportActivityLogToExcel(UUID staffId) {
+        validateAndGetStaff(staffId);
+        List<ActivityLog> logs = activityLogRepository.findAllByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(staffId);
+
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Activity Logs");
+
+            // Define styles using helper method and constants
+            Font headerFont = createFont(workbook, EXCEL_FONT_NAME, (short) 11, true, false);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFont(headerFont);
+            headerStyle.setFillForegroundColor(IndexedColors.CORNFLOWER_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            setBorder(headerStyle);
+
+            Font dataFont = createFont(workbook, EXCEL_FONT_NAME, (short) 11, false, false);
+
+            CellStyle dataStyle = workbook.createCellStyle();
+            dataStyle.setFont(dataFont);
+            setBorder(dataStyle);
+
+            CellStyle centerDataStyle = workbook.createCellStyle();
+            centerDataStyle.setFont(dataFont);
+            centerDataStyle.setAlignment(HorizontalAlignment.CENTER);
+            setBorder(centerDataStyle);
+
+            // Header row starting directly at row 0
+            String[] headers = {"DATE &TIME", "EVENT TYPE", "DESCRIPTION", "IP ADDRESS"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(EXCEL_DATE_FORMAT);
+
+            int rowIdx = 1;
+            for (ActivityLog log : logs) {
+                Row row = sheet.createRow(rowIdx++);
+
+                Cell cellTime = row.createCell(0);
+                cellTime.setCellValue(log.getCreatedAt() != null ? log.getCreatedAt().format(formatter) : "");
+                cellTime.setCellStyle(centerDataStyle);
+
+                Cell cellType = row.createCell(1);
+                cellType.setCellValue(log.getEventType() != null ? log.getEventType().name() : "");
+                cellType.setCellStyle(centerDataStyle);
+
+                Cell cellDesc = row.createCell(2);
+                cellDesc.setCellValue(log.getDescription() != null ? log.getDescription() : "");
+                cellDesc.setCellStyle(dataStyle);
+
+                Cell cellIp = row.createCell(3);
+                cellIp.setCellValue(log.getIpAddress() != null ? log.getIpAddress() : "");
+                cellIp.setCellStyle(centerDataStyle);
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+                int currentWidth = sheet.getColumnWidth(i);
+                sheet.setColumnWidth(i, currentWidth + 1024);
+            }
+
+            workbook.write(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to export Excel file", e);
+        }
+    }
+
+    private void setBorder(CellStyle style) {
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
     }
 }
