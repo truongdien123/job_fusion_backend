@@ -14,4 +14,5 @@ public interface ActivityLogService {
     void log(UUID userId, EventType eventType, String description);
     void log(UUID userId, EventType eventType, String description, UUID jobPostingId, JobPostingAction action);
     void deleteAllActivityLog(UUID staffId);
+    byte[] exportActivityLogToExcel(UUID staffId);
 }
