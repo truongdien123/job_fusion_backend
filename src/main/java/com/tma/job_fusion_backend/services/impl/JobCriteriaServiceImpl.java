@@ -14,6 +14,9 @@ import com.tma.job_fusion_backend.repositories.JobPostingRepository;
 import com.tma.job_fusion_backend.services.JobCriteriaService;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.ValidationUtil;
+import com.tma.job_fusion_backend.enums.EventType;
+import com.tma.job_fusion_backend.enums.JobPostingAction;
+import com.tma.job_fusion_backend.services.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +42,7 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
     private final JobPostingRepository jobPostingRepository;
     private final JobCriteriaMapper jobCriteriaMapper;
     private final ValidationUtil validationUtil;
+    private final ActivityLogService activityLogService;
 
     @Override
     @Transactional
@@ -122,6 +126,14 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
         // Save all changes
         List<JobCriteria> savedList = jobCriteriaRepository.saveAll(jobCriteriaList);
 
+        activityLogService.log(
+                currentUser.getId(),
+                EventType.ACTION,
+                "Updated job criteria for job: " + jobPosting.getTitle(),
+                jobPosting.getId(),
+                JobPostingAction.UPDATE
+        );
+
         // Filter and return only the active (non-deleted) criteria
         return savedList.stream()
                 .filter(jobCriteria -> ObjectUtils.isEmpty(jobCriteria.getDeletedAt()))
@@ -170,6 +182,15 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
         jobCriteria.setUpdatedBy(currentUser.getId());
 
         JobCriteria saved = jobCriteriaRepository.save(jobCriteria);
+
+        activityLogService.log(
+                currentUser.getId(),
+                EventType.ACTION,
+                "Updated job criterion: " + saved.getCriterionName() + " for job: " + saved.getJob().getTitle(),
+                saved.getJob().getId(),
+                JobPostingAction.UPDATE
+        );
+
         return jobCriteriaMapper.toResponse(saved);
     }
 

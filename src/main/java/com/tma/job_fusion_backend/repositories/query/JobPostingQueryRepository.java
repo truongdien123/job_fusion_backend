@@ -46,10 +46,7 @@ public class JobPostingQueryRepository {
         if (ObjectUtils.isNotEmpty(filter)) {
             if (StringUtils.isNotEmpty(filter.getSearch())) {
                 String search = filter.getSearch().trim();
-                builder.and(qJobPosting.title.containsIgnoreCase(search)
-                        .or(qJobPosting.department.containsIgnoreCase(search))
-                        .or(qJobPosting.location.containsIgnoreCase(search))
-                        .or(qJobPosting.description.containsIgnoreCase(search)));
+                builder.and(qJobPosting.title.containsIgnoreCase(search));
             }
             if (StringUtils.isNotEmpty(filter.getTitle())) {
                 builder.and(qJobPosting.title.containsIgnoreCase(filter.getTitle().trim()));
