@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import com.tma.job_fusion_backend.enums.UserStatus;
@@ -18,9 +19,11 @@ public class StaffRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
+    @Size(max = 255, message = "Email length cannot exceed 255 characters")
     private String email;
 
     @NotBlank(message = "Full name is required")
+    @Size(max = 255, message = "Full name length cannot exceed 255 characters")
     private String fullName;
 
     @NotEmpty(message = "Role is required")
