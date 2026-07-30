@@ -60,7 +60,7 @@ public class ActivityLogQueryRepository {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(qActivityLog.createdAt.desc())
+                .orderBy(qActivityLog.updatedAt.desc())
                 .fetch();
 
         Long total = queryFactory.select(qActivityLog.count())
