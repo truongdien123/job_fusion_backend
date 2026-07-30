@@ -14,6 +14,7 @@ public class SignInRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
+    @Size(max = 255, message = "Email length cannot exceed 255 characters")
     private String email;
 
     @NotBlank(message = "Password is required")

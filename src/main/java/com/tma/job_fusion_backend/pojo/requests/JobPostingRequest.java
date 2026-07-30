@@ -8,6 +8,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -20,11 +21,14 @@ import java.time.LocalDateTime;
 public class JobPostingRequest {
 
     @NotBlank(message = "Job title is required")
+    @Size(max = 255, message = "Job title length cannot exceed 255 characters")
     private String title;
 
     @NotBlank(message = "Department is required")
+    @Size(max = 255, message = "Department length cannot exceed 255 characters")
     private String department;
 
+    @Size(max = 255, message = "Level length cannot exceed 255 characters")
     private String level;
 
     @NotNull(message = "Employment type is required")
@@ -34,6 +38,7 @@ public class JobPostingRequest {
     private LocationType locationType;
 
     @NotBlank(message = "Location is required")
+    @Size(max = 255, message = "Location length cannot exceed 255 characters")
     private String location;
 
     @FutureOrPresentDate(message = "Application deadline must be in the future or present")

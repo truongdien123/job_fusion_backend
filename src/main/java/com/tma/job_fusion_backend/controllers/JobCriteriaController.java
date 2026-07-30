@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,13 +21,14 @@ import java.util.UUID;
 @RequestMapping(EndpointConstant.ENDPOINT_JOB_CRITERIA)
 @RequiredArgsConstructor
 @Tag(name = "job-criteria")
+@Validated
 public class JobCriteriaController {
 
     private final JobCriteriaService jobCriteriaService;
 
     @PostMapping
     @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR})
-    public ResponseEntity<?> createJobCriteria(@RequestBody List<JobCriteriaRequest> requests) {
+    public ResponseEntity<?> createJobCriteria(@RequestBody List<@Valid JobCriteriaRequest> requests) {
         List<JobCriteriaResponse> response = jobCriteriaService.createJobCriteria(requests);
         return ResponseUtil.success("Create job criteria successfully", response);
     }

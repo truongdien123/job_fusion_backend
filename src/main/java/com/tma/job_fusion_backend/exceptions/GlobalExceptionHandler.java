@@ -2,6 +2,8 @@ package com.tma.job_fusion_backend.exceptions;
 
 import com.tma.job_fusion_backend.commons.ErrorCode;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
         String errorMsg = ex.getBindingResult().getFieldErrors().stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .collect(Collectors.joining("; "));
+        return ResponseUtil.error(HttpStatus.BAD_REQUEST, errorMsg);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<?> handleConstraintViolationException(ConstraintViolationException ex) {
+        String errorMsg = ex.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining("; "));
         return ResponseUtil.error(HttpStatus.BAD_REQUEST, errorMsg);
     }
