@@ -142,4 +142,16 @@ public class JobPostingQueryRepository {
                 .postingsExpiringSoon(postingsExpiringSoon)
                 .build();
     }
+
+    @Transactional
+    public int closeExpiredJobPostings(LocalDateTime now) {
+        QJobPosting qJobPosting = QJobPosting.jobPosting;
+        return (int) queryFactory.update(qJobPosting)
+                .set(qJobPosting.status, JobStatus.CLOSED)
+                .set(qJobPosting.updatedAt, now)
+                .where(qJobPosting.status.eq(JobStatus.OPEN)
+                        .and(qJobPosting.applicationDeadline.before(now))
+                        .and(qJobPosting.deletedAt.isNull()))
+                .execute();
+    }
 }
