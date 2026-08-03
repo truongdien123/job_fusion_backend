@@ -9,6 +9,7 @@ import com.tma.job_fusion_backend.services.EmailService;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +46,7 @@ public class TenantExpirationScheduler {
         log.info("Found {} active tenants qualifying for expiration warnings.", warningTenants.size());
 
         for (Tenant tenant : warningTenants) {
-            if (tenant.getExpirationDate() == null) {
+            if (ObjectUtils.isEmpty(tenant.getExpirationDate())) {
                 continue;
             }
             // Ensure expiration date is in the future relative to 'now'
