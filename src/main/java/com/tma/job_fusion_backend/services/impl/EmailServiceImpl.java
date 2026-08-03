@@ -94,6 +94,24 @@ public class EmailServiceImpl implements EmailService {
                 "Tenant: " + dto.getTenantName());
     }
 
+    @Override
+    @Async("mailExecutor")
+    public void sendTenantExpirationWarningEmail(String toEmail, String tenantName, String expirationDate, long daysRemaining) {
+        String subject = "Action Required: Your JobFusion Subscription is Expiring Soon";
+
+        Context context = new Context();
+        context.setVariable("tenantName", tenantName);
+        context.setVariable("expirationDate", expirationDate);
+        context.setVariable("daysRemaining", daysRemaining);
+
+        sendHtmlEmail(toEmail,
+                subject,
+                "tenant-expiration-warning-email",
+                context,
+                "Tenant Expiration Warning",
+                "Tenant: " + tenantName);
+    }
+
     private void sendHtmlEmail(String toEmail, String subject, String templateName, Context context, String emailType, String simulatedSuffix) {
         String htmlBody = templateEngine.process(templateName, context);
 
