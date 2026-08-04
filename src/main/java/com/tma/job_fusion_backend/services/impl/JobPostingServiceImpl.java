@@ -23,6 +23,7 @@ import com.tma.job_fusion_backend.enums.EventType;
 import com.tma.job_fusion_backend.enums.JobPostingAction;
 import com.tma.job_fusion_backend.models.ActivityLog;
 import com.tma.job_fusion_backend.pojo.responses.JobPostingRevisionResponse;
+import com.tma.job_fusion_backend.pojo.responses.TenantJobLimitResponse;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.ValidationUtil;
 import java.util.List;
@@ -62,6 +63,7 @@ public class JobPostingServiceImpl implements JobPostingService {
         Tenant tenant = tenantRepository.findByIdAndDeletedAtIsNull(tenantId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
 
+        validateTitleUniqueness(tenantId, request.getTitle(), null);
         validateSalaryRange(request.getSalaryMin(), request.getSalaryMax());
 
         JobStatus targetStatus = request.getStatus() != null ? request.getStatus() : JobStatus.OPEN;
@@ -116,6 +118,11 @@ public class JobPostingServiceImpl implements JobPostingService {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
         JobPosting jobPosting = findJobPostingById(id);
         validateTenantAccess(currentUser, jobPosting);
+
+        UUID tenantId = currentUser.getTenantId();
+        if (StringUtils.isNotEmpty(request.getTitle()) && !request.getTitle().trim().equalsIgnoreCase(jobPosting.getTitle())) {
+            validateTitleUniqueness(tenantId, request.getTitle(), id);
+        }
 
         validateSalaryRange(request.getSalaryMin(), request.getSalaryMax());
 
@@ -252,5 +259,26 @@ public class JobPostingServiceImpl implements JobPostingService {
                 .collect(Collectors.toList());
         response.setRevisions(revisions);
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TenantJobLimitResponse getTenantJobLimit() {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        UUID tenantId = currentUser.getTenantId();
+
+        if (ObjectUtils.isEmpty(tenantId)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        Tenant tenant = tenantRepository.findByIdAndDeletedAtIsNull(tenantId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
+
+        long currentActiveJobs = jobPostingRepository.countByTenantIdAndStatusAndDeletedAtIsNull(tenant.getId(), JobStatus.OPEN);
+
+        return TenantJobLimitResponse.builder()
+                .currentActiveJobs(currentActiveJobs)
+                .maxActiveJobs(tenant.getMaxActiveJobPosting())
+                .build();
     }
 }

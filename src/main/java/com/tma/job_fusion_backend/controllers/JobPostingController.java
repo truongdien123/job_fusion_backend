@@ -8,7 +8,11 @@ import com.tma.job_fusion_backend.pojo.requests.JobPostingRequest;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import com.tma.job_fusion_backend.pojo.responses.JobPostingResponse;
+import com.tma.job_fusion_backend.pojo.requests.JdGenerateRequest;
+import com.tma.job_fusion_backend.pojo.responses.JdGenerateResponse;
+import com.tma.job_fusion_backend.pojo.responses.TenantJobLimitResponse;
 import com.tma.job_fusion_backend.services.JobPostingService;
+import com.tma.job_fusion_backend.services.JdAiService;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,12 +29,27 @@ import java.util.UUID;
 public class JobPostingController {
 
     private final JobPostingService jobPostingService;
+    private final JdAiService jdAiService;
 
     @PostMapping
     @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR})
     public ResponseEntity<?> createJobPosting(@Valid @RequestBody JobPostingRequest request) {
         JobPostingResponse response = jobPostingService.createJobPosting(request);
         return ResponseUtil.success("Create job posting successfully", response);
+    }
+
+    @PostMapping(EndpointConstant.ENDPOINT_GENERATE_JD)
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR})
+    public ResponseEntity<?> generateJd(@Valid @RequestBody JdGenerateRequest request) {
+        JdGenerateResponse response = jdAiService.generateJd(request);
+        return ResponseUtil.success("Job description generated successfully", response);
+    }
+
+    @GetMapping(EndpointConstant.ENDPOINT_LIMIT)
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR})
+    public ResponseEntity<?> getTenantJobLimit() {
+        TenantJobLimitResponse response = jobPostingService.getTenantJobLimit();
+        return ResponseUtil.success("Get tenant job limit successfully", response);
     }
 
     @PostMapping(EndpointConstant.ENDPOINT_LIST)

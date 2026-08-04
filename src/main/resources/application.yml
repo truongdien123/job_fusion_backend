@@ -35,3 +35,7 @@ app:
   otp:
     expire-minutes: 5
   login: ${LOGIN_LINK}
+
+ai-service:
+  url: http://127.0.0.1:8000
+  timeout-seconds: 90
