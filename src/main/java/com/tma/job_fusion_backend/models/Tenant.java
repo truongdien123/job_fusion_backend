@@ -46,6 +46,9 @@ public class Tenant extends BaseEntity {
     @Column(name = "expiration_date")
     private LocalDateTime expirationDate;
 
+    @Column(name = "expiration_warning_sent")
+    private Boolean expirationWarningSent = false;
+
     @Column(name = "price")
     private Double price;
 

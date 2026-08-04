@@ -5,4 +5,5 @@ import com.tma.job_fusion_backend.pojo.dtos.TenantCreatedEmailDto;
 public interface EmailService {
     void sendResetPasswordOtp(String toEmail, String otp);
     void sendTenantCreatedEmail(TenantCreatedEmailDto dto);
+    void sendTenantExpirationWarningEmail(String toEmail, String tenantName, String expirationDate, long daysRemaining);
 }

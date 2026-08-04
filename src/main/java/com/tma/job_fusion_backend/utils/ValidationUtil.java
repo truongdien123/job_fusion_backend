@@ -75,6 +75,7 @@ public class ValidationUtil {
                     : (plan.getBillingCycle() == BillingCycle.SIX_MONTHLY
                         ? DateTimeUtil.nowUtc().plusDays(180)
                         : DateTimeUtil.nowUtc().plusDays(30)));
+            tenant.setExpirationWarningSent(false);
         }
     }
 }
