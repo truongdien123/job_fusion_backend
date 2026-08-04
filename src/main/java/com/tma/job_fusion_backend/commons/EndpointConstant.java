@@ -14,6 +14,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_ACTIVITY_LOG_BASE = "/activity-log";
     public static final String ENDPOINT_JOB_POSTING_BASE = "/job-posting";
     public static final String ENDPOINT_JOB_CRITERIA_BASE = "/job-criteria";
+    public static final String ENDPOINT_LIMIT = "/limit";
 
     // Core endpoints with /api
     public static final String ENDPOINT_AUTH = ENDPOINT_PREFIX + ENDPOINT_AUTH_BASE;
@@ -63,8 +64,9 @@ public final class EndpointConstant {
     public static final String ENDPOINT_STAFF_LIST = ENDPOINT_STAFF_BASE + ENDPOINT_LIST;
     public static final String ENDPOINT_STAFF_ID = ENDPOINT_STAFF_BASE + ENDPOINT_ID;
     public static final String ENDPOINT_STAFF_RESEND_ACTIVATION = ENDPOINT_STAFF_BASE + ENDPOINT_ID + "/resend-activation";
-    public static final String ENDPOINT_STAFF_LIMIT = ENDPOINT_STAFF_BASE + "/limit";
+    public static final String ENDPOINT_STAFF_LIMIT = ENDPOINT_STAFF_BASE + ENDPOINT_LIMIT;
     public static final String ENDPOINT_STAFF_EXPORT = ENDPOINT_STAFF_BASE + ENDPOINT_ID + "/export";
     public static final String ENDPOINT_CHECK_TITLE = "/check-title";
+    public static final String ENDPOINT_GENERATE_JD = "/generate-jd";
     public static final String ENDPOINT_JOB_ID = "/job/{jobId}";
 }

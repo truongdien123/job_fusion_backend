@@ -23,6 +23,7 @@ import com.tma.job_fusion_backend.enums.EventType;
 import com.tma.job_fusion_backend.enums.JobPostingAction;
 import com.tma.job_fusion_backend.models.ActivityLog;
 import com.tma.job_fusion_backend.pojo.responses.JobPostingRevisionResponse;
+import com.tma.job_fusion_backend.pojo.responses.TenantJobLimitResponse;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.ValidationUtil;
 import java.util.List;
@@ -52,19 +53,14 @@ public class JobPostingServiceImpl implements JobPostingService {
     @Override
     @Transactional
     public JobPostingResponse createJobPosting(JobPostingRequest request) {
-        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
-        UUID tenantId = currentUser.getTenantId();
+        UserPrincipal currentUser = getAndValidateUser();
 
-        if (ObjectUtils.isEmpty(tenantId)) {
-            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-        }
+        Tenant tenant = getTenantById(currentUser.getTenantId());
 
-        Tenant tenant = tenantRepository.findByIdAndDeletedAtIsNull(tenantId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
-
+        validateTitleUniqueness(currentUser.getTenantId(), request.getTitle(), null);
         validateSalaryRange(request.getSalaryMin(), request.getSalaryMax());
 
-        JobStatus targetStatus = request.getStatus() != null ? request.getStatus() : JobStatus.OPEN;
+        JobStatus targetStatus = ObjectUtils.isNotEmpty(request.getStatus()) ? request.getStatus() : JobStatus.OPEN;
         if (JobStatus.OPEN == targetStatus) {
             validateActiveJobPostingLimit(tenant);
         }
@@ -90,11 +86,10 @@ public class JobPostingServiceImpl implements JobPostingService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<JobPostingResponse> getListJobPosting(PagingRequest<JobPostingFilter> request) {
-        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
-        UUID tenantId = currentUser.getTenantId();
+        UserPrincipal currentUser = getAndValidateUser();
 
         JobPostingFilter filter = ObjectUtils.isNotEmpty(request) ? request.getFilters() : null;
-        Page<JobPosting> jobPage = jobPostingQueryRepository.findAllJobPostings(tenantId, filter, request.toPageable());
+        Page<JobPosting> jobPage = jobPostingQueryRepository.findAllJobPostings(currentUser.getTenantId(), filter, request.toPageable());
         Page<JobPostingResponse> mappedPage = jobPage.map(jobPostingMapper::toResponse);
 
         return PageResponse.of(mappedPage);
@@ -103,7 +98,7 @@ public class JobPostingServiceImpl implements JobPostingService {
     @Override
     @Transactional(readOnly = true)
     public JobPostingResponse getJobPostingDetail(UUID id) {
-        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        UserPrincipal currentUser = getAndValidateUser();
         JobPosting jobPosting = findJobPostingById(id);
         validateTenantAccess(currentUser, jobPosting);
 
@@ -113,9 +108,13 @@ public class JobPostingServiceImpl implements JobPostingService {
     @Override
     @Transactional
     public JobPostingResponse updateJobPosting(UUID id, JobPostingRequest request) {
-        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        UserPrincipal currentUser = getAndValidateUser();
         JobPosting jobPosting = findJobPostingById(id);
         validateTenantAccess(currentUser, jobPosting);
+
+        if (StringUtils.isNotEmpty(request.getTitle()) && !request.getTitle().trim().equalsIgnoreCase(jobPosting.getTitle())) {
+            validateTitleUniqueness(currentUser.getTenantId(), request.getTitle(), id);
+        }
 
         validateSalaryRange(request.getSalaryMin(), request.getSalaryMax());
 
@@ -154,7 +153,7 @@ public class JobPostingServiceImpl implements JobPostingService {
     @Override
     @Transactional
     public void deleteJobPosting(UUID id) {
-        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        UserPrincipal currentUser = getAndValidateUser();
         JobPosting jobPosting = findJobPostingById(id);
         validateTenantAccess(currentUser, jobPosting);
 
@@ -212,37 +211,43 @@ public class JobPostingServiceImpl implements JobPostingService {
         }
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public void checkTitleUniqueness(String title, UUID excludeId) {
+    private Tenant getTenantById(UUID id) {
+        return tenantRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TENANT_NOT_FOUND));
+    }
+
+    private UserPrincipal getAndValidateUser() {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
         UUID tenantId = currentUser.getTenantId();
 
         if (ObjectUtils.isEmpty(tenantId)) {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
-
-        validateTitleUniqueness(tenantId, title, excludeId);
+        return currentUser;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void checkTitleUniqueness(String title, UUID excludeId) {
+        UserPrincipal currentUser = getAndValidateUser();
+
+        validateTitleUniqueness(currentUser.getTenantId(), title, excludeId);
+    }
+
     private JobPostingResponse toResponseWithRevisions(JobPosting jobPosting) {
         JobPostingResponse response = jobPostingMapper.toResponse(jobPosting);
         List<ActivityLog> logs = activityLogRepository.findAllByJobPostingIdAndDeletedAtIsNullOrderByCreatedAtDesc(jobPosting.getId());
         List<JobPostingRevisionResponse> revisions = logs.stream()
-                .filter(log -> log.getAction() != null)
+                .filter(log -> ObjectUtils.isNotEmpty(log.getAction()))
                 .map(log -> {
                     JobPostingAction action = log.getAction();
-                    String actionLabel = "";
-                    if (JobPostingAction.CREATE == action) {
-                        actionLabel = "Create Job Posting: \"" + jobPosting.getTitle() + "\"";
-                    } else if (JobPostingAction.UPDATE == action) {
-                        actionLabel = "Update Job Posting";
-                    } else if (JobPostingAction.OPEN == action) {
-                        actionLabel = "Open Job Posting";
-                    } else if (JobPostingAction.CLOSE == action) {
-                        actionLabel = "Closed Job Posting";
-                    } else if (JobPostingAction.DELETE == action) {
-                        actionLabel = "Deleted Job Posting";
-                    }
+                    String actionLabel = switch (action) {
+                        case CREATE -> "Create Job Posting: \"" + jobPosting.getTitle() + "\"";
+                        case UPDATE -> "Update Job Posting";
+                        case OPEN -> "Open Job Posting";
+                        case CLOSE -> "Closed Job Posting";
+                        case DELETE -> "Deleted Job Posting";
+                    };
                     return JobPostingRevisionResponse.builder()
                             .action(actionLabel)
                             .actorName(ObjectUtils.isNotEmpty(log.getUser()) ? log.getUser().getFullName() : null)
@@ -252,5 +257,20 @@ public class JobPostingServiceImpl implements JobPostingService {
                 .collect(Collectors.toList());
         response.setRevisions(revisions);
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TenantJobLimitResponse getTenantJobLimit() {
+        UserPrincipal currentUser = getAndValidateUser();
+
+        Tenant tenant = getTenantById(currentUser.getTenantId());
+
+        long currentActiveJobs = jobPostingRepository.countByTenantIdAndStatusAndDeletedAtIsNull(tenant.getId(), JobStatus.OPEN);
+
+        return TenantJobLimitResponse.builder()
+                .currentActiveJobs(currentActiveJobs)
+                .maxActiveJobs(tenant.getMaxActiveJobPosting())
+                .build();
     }
 }
