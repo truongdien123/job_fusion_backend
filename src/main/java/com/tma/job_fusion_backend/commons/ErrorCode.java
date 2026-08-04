@@ -34,4 +34,6 @@ public final class ErrorCode {
     public static final String INVALID_TOTAL_WEIGHT = "total_weight_must_be_exactly_100";
     public static final String DOMAIN_ALREADY_EXISTS = "domain_already_exists";
     public static final String PLAN_IN_USE = "plan_is_currently_in_use";
+    public static final String AI_SERVICE_ERROR = "ai_service_error";
+    public static final String AI_SERVICE_UNAVAILABLE = "ai_service_unavailable";
 }

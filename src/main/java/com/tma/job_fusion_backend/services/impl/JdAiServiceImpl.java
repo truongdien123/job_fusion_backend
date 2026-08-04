@@ -1,5 +1,7 @@
 package com.tma.job_fusion_backend.services.impl;
 
+import com.tma.job_fusion_backend.commons.ErrorCode;
+import com.tma.job_fusion_backend.exceptions.AiServiceException;
 import com.tma.job_fusion_backend.models.Skill;
 import com.tma.job_fusion_backend.pojo.requests.JdGenerateRequest;
 import com.tma.job_fusion_backend.pojo.responses.JdGenerateResponse;
@@ -110,10 +112,10 @@ public class JdAiServiceImpl implements JdAiService {
                     .block(); // Synchronously wait for the response block
         } catch (WebClientResponseException e) {
             log.error("HTTP error from AI JD Generator: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("AI JD Generator returned HTTP error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString(), e);
+            throw new AiServiceException(ErrorCode.AI_SERVICE_ERROR, e);
         } catch (Exception e) {
             log.error("Error communicating with AI JD Generator service", e);
-            throw new RuntimeException("AI JD Generator service is currently unavailable or request timed out: " + e.getMessage(), e);
+            throw new AiServiceException(ErrorCode.AI_SERVICE_UNAVAILABLE, e);
         }
     }
 }
