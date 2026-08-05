@@ -258,11 +258,7 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
                 .build();
 
         CriteriaAiGenerateResponse aiResponse = jdAiService.generateJobCriteria(aiRequest);
-        if (ObjectUtils.isEmpty(aiResponse)) {
-            return null;
-        }
-
-        return aiResponse;
+        return ObjectUtils.isEmpty(aiResponse) ? null : aiResponse;
     }
 
 }
