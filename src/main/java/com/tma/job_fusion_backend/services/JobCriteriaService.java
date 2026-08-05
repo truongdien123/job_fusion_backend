@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.services;
 
 import com.tma.job_fusion_backend.pojo.requests.JobCriteriaRequest;
+import com.tma.job_fusion_backend.pojo.responses.CriteriaAiGenerateResponse;
 import com.tma.job_fusion_backend.pojo.responses.JobCriteriaResponse;
 
 import java.util.List;
@@ -19,5 +20,7 @@ public interface JobCriteriaService {
     void deleteJobCriteria(UUID id);
 
     void deleteAllJobCriteriaByJobId(UUID jobId);
+
+    CriteriaAiGenerateResponse generateJobCriteria(UUID jobId);
 
 }

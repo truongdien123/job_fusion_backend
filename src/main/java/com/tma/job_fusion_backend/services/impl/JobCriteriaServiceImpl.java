@@ -14,6 +14,9 @@ import com.tma.job_fusion_backend.repositories.JobPostingRepository;
 import com.tma.job_fusion_backend.services.JobCriteriaService;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.ValidationUtil;
+import com.tma.job_fusion_backend.pojo.requests.CriteriaAiGenerateRequest;
+import com.tma.job_fusion_backend.pojo.responses.CriteriaAiGenerateResponse;
+import com.tma.job_fusion_backend.services.JdAiService;
 import com.tma.job_fusion_backend.enums.EventType;
 import com.tma.job_fusion_backend.enums.JobPostingAction;
 import com.tma.job_fusion_backend.services.ActivityLogService;
@@ -43,6 +46,7 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
     private final JobCriteriaMapper jobCriteriaMapper;
     private final ValidationUtil validationUtil;
     private final ActivityLogService activityLogService;
+    private final JdAiService jdAiService;
 
     @Override
     @Transactional
@@ -238,6 +242,27 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
         if (ObjectUtils.isEmpty(jobPosting.getTenant()) || !currentUser.getTenantId().equals(jobPosting.getTenant().getId())) {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CriteriaAiGenerateResponse generateJobCriteria(UUID jobId) {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        JobPosting jobPosting = findJobPostingById(jobId);
+        validateTenantAccess(currentUser, jobPosting);
+
+        CriteriaAiGenerateRequest aiRequest = CriteriaAiGenerateRequest.builder()
+                .jobTitle(jobPosting.getTitle())
+                .description(jobPosting.getDescription())
+                .requirements(jobPosting.getRequirements())
+                .build();
+
+        CriteriaAiGenerateResponse aiResponse = jdAiService.generateJobCriteria(aiRequest);
+        if (ObjectUtils.isEmpty(aiResponse)) {
+            return null;
+        }
+
+        return aiResponse;
     }
 
 }

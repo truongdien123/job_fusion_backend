@@ -68,5 +68,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_STAFF_EXPORT = ENDPOINT_STAFF_BASE + ENDPOINT_ID + "/export";
     public static final String ENDPOINT_CHECK_TITLE = "/check-title";
     public static final String ENDPOINT_GENERATE_JD = "/generate-jd";
+    public static final String ENDPOINT_GENERATE_CRITERIA = "/generate-criteria";
     public static final String ENDPOINT_JOB_ID = "/job/{jobId}";
+    public static final String ENDPOINT_GENERATE_CRITERIA_BY_JOB_ID = ENDPOINT_JOB_ID + ENDPOINT_GENERATE_CRITERIA;
 }
