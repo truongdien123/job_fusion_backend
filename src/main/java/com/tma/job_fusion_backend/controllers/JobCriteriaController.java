@@ -4,6 +4,7 @@ import com.tma.job_fusion_backend.annotations.RequireRoles;
 import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.pojo.requests.JobCriteriaRequest;
+import com.tma.job_fusion_backend.pojo.responses.CriteriaAiGenerateResponse;
 import com.tma.job_fusion_backend.pojo.responses.JobCriteriaResponse;
 import com.tma.job_fusion_backend.services.JobCriteriaService;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
@@ -32,6 +33,14 @@ public class JobCriteriaController {
         List<JobCriteriaResponse> response = jobCriteriaService.createJobCriteria(requests);
         return ResponseUtil.success("Create job criteria successfully", response);
     }
+
+    @PostMapping(EndpointConstant.ENDPOINT_GENERATE_CRITERIA_BY_JOB_ID)
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR})
+    public ResponseEntity<?> generateJobCriteria(@PathVariable UUID jobId) {
+        CriteriaAiGenerateResponse response = jobCriteriaService.generateJobCriteria(jobId);
+        return ResponseUtil.success("Generate job criteria successfully", response);
+    }
+
 
     @GetMapping(EndpointConstant.ENDPOINT_ID)
     @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER})

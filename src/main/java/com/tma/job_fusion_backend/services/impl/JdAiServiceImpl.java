@@ -1,26 +1,25 @@
 package com.tma.job_fusion_backend.services.impl;
 
-import com.tma.job_fusion_backend.commons.ErrorCode;
-import com.tma.job_fusion_backend.exceptions.AiServiceException;
 import com.tma.job_fusion_backend.models.Skill;
 import com.tma.job_fusion_backend.pojo.requests.JdGenerateRequest;
+import com.tma.job_fusion_backend.pojo.responses.CriteriaAiGenerateResponse;
 import com.tma.job_fusion_backend.pojo.responses.JdGenerateResponse;
+import com.tma.job_fusion_backend.pojo.requests.CriteriaAiGenerateRequest;
 import com.tma.job_fusion_backend.repositories.SkillRepository;
 import com.tma.job_fusion_backend.repositories.query.SkillQueryRepository;
+import com.tma.job_fusion_backend.services.BaseWebClientService;
 import com.tma.job_fusion_backend.services.JdAiService;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
@@ -30,23 +29,27 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Objects;
 
-@Slf4j
+@Log4j2
 @Service
 public class JdAiServiceImpl implements JdAiService {
 
     private final String URI = "/api/v1/jd/generate";
+    private final String CRITERIA_URI = "/api/v1/jd/generate-criteria";
 
     private final WebClient webClient;
     private final SkillRepository skillRepository;
     private final SkillQueryRepository skillQueryRepository;
+    private final BaseWebClientService baseWebClientService;
 
     public JdAiServiceImpl(
             @Value("${ai-service.url}") String apiBaseUrl,
             @Value("${ai-service.timeout-seconds}") int timeoutSeconds,
             SkillRepository skillRepository,
-            SkillQueryRepository skillQueryRepository) {
+            SkillQueryRepository skillQueryRepository,
+            BaseWebClientService baseWebClientService) {
         this.skillRepository = skillRepository;
         this.skillQueryRepository = skillQueryRepository;
+        this.baseWebClientService = baseWebClientService;
         
         // Configure netty HttpClient with timeouts tailored for local LLM usage
         HttpClient httpClient = HttpClient.create()
@@ -102,20 +105,12 @@ public class JdAiServiceImpl implements JdAiService {
             }
         }
 
-        try {
-            return this.webClient.post()
-                    .uri(URI)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(request)
-                    .retrieve()
-                    .bodyToMono(JdGenerateResponse.class)
-                    .block(); // Synchronously wait for the response block
-        } catch (WebClientResponseException e) {
-            log.error("HTTP error from AI JD Generator: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new AiServiceException(ErrorCode.AI_SERVICE_ERROR, e);
-        } catch (Exception e) {
-            log.error("Error communicating with AI JD Generator service", e);
-            throw new AiServiceException(ErrorCode.AI_SERVICE_UNAVAILABLE, e);
-        }
+        return baseWebClientService.post(this.webClient, "AI JD Generator", URI, request, JdGenerateResponse.class);
+    }
+
+    @Override
+    public CriteriaAiGenerateResponse generateJobCriteria(CriteriaAiGenerateRequest request) {
+        log.info("Sending request to AI Criteria Generator service for title: {}", request.getJobTitle());
+        return baseWebClientService.post(this.webClient, "AI Criteria Generator", CRITERIA_URI, request, CriteriaAiGenerateResponse.class);
     }
 }
