@@ -36,4 +36,10 @@ public final class ErrorCode {
     public static final String PLAN_IN_USE = "plan_is_currently_in_use";
     public static final String AI_SERVICE_ERROR = "ai_service_error";
     public static final String AI_SERVICE_UNAVAILABLE = "ai_service_unavailable";
+    public static final String FILE_EMPTY = "file_cannot_be_empty";
+    public static final String FILE_INVALID_NAME = "file_must_have_a_valid_name";
+    public static final String FILE_EXTENSION_NOT_ALLOWED = "file_extension_not_allowed";
+    public static final String FILE_CONTENT_TYPE_NOT_ALLOWED = "file_content_type_not_allowed";
+    public static final String FILE_UPLOAD_FAILED = "file_upload_failed";
+    public static final String RESUME_NOT_FOUND = "resume_not_found";
 }
