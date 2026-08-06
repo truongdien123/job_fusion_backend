@@ -95,7 +95,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
         // Validate content type
         String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
+        if (StringUtils.isEmpty(contentType) || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
             throw new BadRequestException(ErrorCode.FILE_CONTENT_TYPE_NOT_ALLOWED);
         }
     }
