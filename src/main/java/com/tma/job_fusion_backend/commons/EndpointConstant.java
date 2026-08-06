@@ -25,6 +25,11 @@ public final class EndpointConstant {
     public static final String ENDPOINT_ACTIVITY_LOG = ENDPOINT_PREFIX + ENDPOINT_ACTIVITY_LOG_BASE;
     public static final String ENDPOINT_JOB_POSTING = ENDPOINT_PREFIX + ENDPOINT_JOB_POSTING_BASE;
     public static final String ENDPOINT_JOB_CRITERIA = ENDPOINT_PREFIX + ENDPOINT_JOB_CRITERIA_BASE;
+    public static final String ENDPOINT_UPLOAD_BASE = "/upload";
+    public static final String ENDPOINT_UPLOAD = ENDPOINT_PREFIX + ENDPOINT_UPLOAD_BASE;
+    public static final String ENDPOINT_CANDIDATE_BASE = "/candidate";
+    public static final String ENDPOINT_CANDIDATE = ENDPOINT_PREFIX + ENDPOINT_CANDIDATE_BASE;
+    public static final String ENDPOINT_CANDIDATE_RESUME = ENDPOINT_CANDIDATE + "/resume";
 
     // Authentication methods
     public static final String ENDPOINT_SIGNIN_BASE = "/signin";
