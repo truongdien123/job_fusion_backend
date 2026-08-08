@@ -37,5 +37,5 @@ app:
   login: ${LOGIN_LINK}
 
 ai-service:
-  url: http://127.0.0.1:8000
+  url: ${AI_SERVICE_URL}
   timeout-seconds: 90

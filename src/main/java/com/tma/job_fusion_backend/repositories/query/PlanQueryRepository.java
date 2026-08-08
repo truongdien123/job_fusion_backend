@@ -133,4 +133,13 @@ public class PlanQueryRepository {
                 .fetchFirst();
         return Optional.ofNullable(plan);
     }
+
+    @Transactional(readOnly = true)
+    public Long countPlan() {
+        QPlan qPlan = QPlan.plan;
+        return queryFactory.select(qPlan.count())
+                .from(qPlan)
+                .where(qPlan.deletedAt.isNull())
+                .fetchOne();
+    }
 }
