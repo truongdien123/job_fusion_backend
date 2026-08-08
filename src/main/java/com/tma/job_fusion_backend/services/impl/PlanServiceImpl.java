@@ -42,6 +42,9 @@ public class PlanServiceImpl implements PlanService {
         if (planRepository.existsByNameAndDeletedAtIsNull(request.getName())) {
             throw new BadRequestException(ErrorCode.PLAN_ALREADY_EXISTS);
         }
+        if (planQueryRepository.countPlan() >= 9) {
+            throw new BadRequestException(ErrorCode.MAX_PLAN_REACHED);
+        }
         Plan plan = planMapper.toEntity(request);
 
         plan.setCreatedBy(jwtUtil.getCurrentUserId());

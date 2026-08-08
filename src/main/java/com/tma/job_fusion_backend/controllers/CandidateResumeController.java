@@ -6,6 +6,7 @@ import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.pojo.responses.CandidateResumeResponse;
 import com.tma.job_fusion_backend.services.CandidateResumeService;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping(EndpointConstant.ENDPOINT_CANDIDATE_RESUME)
 @RequiredArgsConstructor
+@Tag(name = "candidate-resume")
 public class CandidateResumeController {
 
     private final CandidateResumeService candidateResumeService;
