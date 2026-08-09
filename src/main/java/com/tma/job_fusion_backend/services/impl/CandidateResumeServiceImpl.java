@@ -15,18 +15,24 @@ import com.tma.job_fusion_backend.repositories.CandidateResumeRepository;
 import com.tma.job_fusion_backend.repositories.JobPostingRepository;
 import com.tma.job_fusion_backend.repositories.UserRepository;
 import com.tma.job_fusion_backend.services.CandidateResumeService;
+import com.tma.job_fusion_backend.services.CvEvaluationService;
 import com.tma.job_fusion_backend.services.FileStorageService;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.JwtUtil;
-import java.util.Optional;
+import com.tma.job_fusion_backend.repositories.query.CandidateApplicationQueryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +46,8 @@ public class CandidateResumeServiceImpl implements CandidateResumeService {
     private final JwtUtil jwtUtil;
     private final JobPostingRepository jobPostingRepository;
     private final CandidateApplicationRepository candidateApplicationRepository;
+    private final CvEvaluationService cvEvaluationService;
+    private final CandidateApplicationQueryRepository candidateApplicationQueryRepository;
 
     @Override
     @Transactional
@@ -58,35 +66,78 @@ public class CandidateResumeServiceImpl implements CandidateResumeService {
                 .findByCandidateIdAndJobIdAndDeletedAtIsNull(currentUserId, jobId);
 
         CandidateResume resume;
+        CandidateApplication application;
         if (existingAppOpt.isPresent()) {
-            CandidateApplication existingApp = existingAppOpt.get();
-            resume = existingApp.getResume();
+            application = existingAppOpt.get();
+            resume = application.getResume();
             resume.setFileUrl(secureUrl);
+            resume.setUpdatedBy(currentUserId);
+            
+            // Reset old AI extraction results immediately
             resume.setParsedData(null);
             resume.setCandidateSelfScore(null);
             resume.setCvImprovementSuggestions(null);
-            resume.setUpdatedBy(currentUserId);
             resume = candidateResumeRepository.save(resume);
 
-            existingApp.setAppliedAt(DateTimeUtil.nowUtc());
-            candidateApplicationRepository.save(existingApp);
+            // Clean up old evaluation and matching data in the main transaction
+            cvEvaluationService.clearEvaluationAndMatchingResult(resume, application);
+
+            application.setAppliedAt(DateTimeUtil.nowUtc());
+            application = candidateApplicationRepository.save(application);
             log.info("CV updated successfully for existing application of user: {}, job: {}, resume ID: {}", currentUserId, jobId, resume.getId());
         } else {
             resume = new CandidateResume();
             resume.setUser(user);
             resume.setFileUrl(secureUrl);
             resume.setCreatedBy(currentUserId);
+            resume.setParsedData(null);
+            resume.setCandidateSelfScore(null);
+            resume.setCvImprovementSuggestions(null);
             resume = candidateResumeRepository.save(resume);
 
-            CandidateApplication application = new CandidateApplication();
+            application = new CandidateApplication();
             application.setJob(jobPosting);
             application.setCandidate(user);
             application.setResume(resume);
             application.setStatus(ApplicationStatus.APPLIED);
             application.setAppliedAt(DateTimeUtil.nowUtc());
-            candidateApplicationRepository.save(application);
+            application = candidateApplicationRepository.save(application);
             log.info("CV uploaded and new application created for user: {}, job: {}, resume ID: {}", currentUserId, jobId, resume.getId());
         }
+
+        byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
+        } catch (IOException e) {
+            log.error("Failed to read file bytes: {}", e.getMessage());
+            fileBytes = new byte[0];
+        }
+
+        final byte[] finalFileBytes = fileBytes;
+        final String originalFilename = file.getOriginalFilename();
+        final String contentType = file.getContentType();
+        final UUID resumeId = resume.getId();
+        final UUID applicationId = application.getId();
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        cvEvaluationService.asyncProcessResumeEvaluation(
+                                resumeId,
+                                applicationId,
+                                finalFileBytes,
+                                originalFilename,
+                                contentType,
+                                jobId
+                        );
+                    } catch (Exception e) {
+                        log.error("Async resume evaluation failed", e);
+                    }
+                });
+            }
+        });
 
         return candidateResumeMapper.toResponse(resume);
     }
@@ -96,8 +147,8 @@ public class CandidateResumeServiceImpl implements CandidateResumeService {
     public CandidateResumeResponse getResumeByJobId(UUID jobId) {
         UUID currentUserId = getCurrentUserId();
 
-        CandidateApplication application = candidateApplicationRepository
-                .findByCandidateIdAndJobIdAndDeletedAtIsNull(currentUserId, jobId)
+        CandidateApplication application = candidateApplicationQueryRepository
+                .findByCandidateIdAndJobIdWithResume(currentUserId, jobId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.RESUME_NOT_FOUND));
 
         CandidateResume resume = application.getResume();

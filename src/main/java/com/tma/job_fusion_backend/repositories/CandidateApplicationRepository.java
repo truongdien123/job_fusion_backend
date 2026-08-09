@@ -9,5 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface CandidateApplicationRepository extends JpaRepository<CandidateApplication, UUID> {
+    Optional<CandidateApplication> findByIdAndDeletedAtIsNull(UUID id);
+
     Optional<CandidateApplication> findByCandidateIdAndJobIdAndDeletedAtIsNull(UUID candidateId, UUID jobId);
 }
