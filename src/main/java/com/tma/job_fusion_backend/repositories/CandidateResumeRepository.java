@@ -9,6 +9,8 @@ import java.util.UUID;
 
 @Repository
 public interface CandidateResumeRepository extends JpaRepository<CandidateResume, UUID> {
+    Optional<CandidateResume> findByIdAndDeletedAtIsNull(UUID id);
+
     Optional<CandidateResume> findByUserIdAndDeletedAtIsNull(UUID userId);
 
     Optional<CandidateResume> findFirstByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID userId);

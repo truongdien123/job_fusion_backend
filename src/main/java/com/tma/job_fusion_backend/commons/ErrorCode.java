@@ -42,5 +42,6 @@ public final class ErrorCode {
     public static final String FILE_CONTENT_TYPE_NOT_ALLOWED = "file_content_type_not_allowed";
     public static final String FILE_UPLOAD_FAILED = "file_upload_failed";
     public static final String RESUME_NOT_FOUND = "resume_not_found";
+    public static final String APPLICATION_NOT_FOUND = "application_not_found";
     public static final String MAX_PLAN_REACHED = "max_plan_reached";
 }

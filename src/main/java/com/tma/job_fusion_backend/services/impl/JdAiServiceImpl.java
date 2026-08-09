@@ -5,8 +5,7 @@ import com.tma.job_fusion_backend.pojo.requests.JdGenerateRequest;
 import com.tma.job_fusion_backend.pojo.responses.CriteriaAiGenerateResponse;
 import com.tma.job_fusion_backend.pojo.responses.JdGenerateResponse;
 import com.tma.job_fusion_backend.pojo.requests.CriteriaAiGenerateRequest;
-import com.tma.job_fusion_backend.repositories.SkillRepository;
-import com.tma.job_fusion_backend.repositories.query.SkillQueryRepository;
+import com.tma.job_fusion_backend.services.SkillService;
 import com.tma.job_fusion_backend.services.BaseWebClientService;
 import com.tma.job_fusion_backend.services.JdAiService;
 import io.netty.channel.ChannelOption;
@@ -37,18 +36,15 @@ public class JdAiServiceImpl implements JdAiService {
     private final String CRITERIA_URI = "/api/v1/jd/generate-criteria";
 
     private final WebClient webClient;
-    private final SkillRepository skillRepository;
-    private final SkillQueryRepository skillQueryRepository;
+    private final SkillService skillService;
     private final BaseWebClientService baseWebClientService;
 
     public JdAiServiceImpl(
             @Value("${ai-service.url}") String apiBaseUrl,
             @Value("${ai-service.timeout-seconds}") int timeoutSeconds,
-            SkillRepository skillRepository,
-            SkillQueryRepository skillQueryRepository,
+            SkillService skillService,
             BaseWebClientService baseWebClientService) {
-        this.skillRepository = skillRepository;
-        this.skillQueryRepository = skillQueryRepository;
+        this.skillService = skillService;
         this.baseWebClientService = baseWebClientService;
         
         // Configure netty HttpClient with timeouts tailored for local LLM usage
@@ -71,38 +67,7 @@ public class JdAiServiceImpl implements JdAiService {
         log.info("Sending request to AI JD Generator service for title: {}", request.getJobTitle());
 
         if (ObjectUtils.isNotEmpty(request.getKeySkills())) {
-            List<String> cleanedSkills = request.getKeySkills().stream()
-                    .filter(Objects::nonNull)
-                    .map(String::trim)
-                    .filter(StringUtils::isNotEmpty)
-                    .distinct()
-                    .toList();
-
-            if (!cleanedSkills.isEmpty()) {
-                Set<String> lowerCaseSkillNames = cleanedSkills.stream()
-                        .map(String::toLowerCase)
-                        .collect(Collectors.toSet());
-
-                List<Skill> existingSkills = skillQueryRepository.findByNamesIgnoreCase(lowerCaseSkillNames);
-                Set<String> existingNames = existingSkills.stream()
-                        .map(Skill::getName)
-                        .map(String::toLowerCase)
-                        .collect(Collectors.toSet());
-
-                List<Skill> newSkills = cleanedSkills.stream()
-                        .filter(name -> !existingNames.contains(name.toLowerCase()))
-                        .map(name -> {
-                            Skill skill = new Skill();
-                            skill.setName(name);
-                            return skill;
-                        })
-                        .collect(Collectors.toList());
-
-                if (!newSkills.isEmpty()) {
-                    skillRepository.saveAll(newSkills);
-                    log.info("Saved {} new skills in bulk", newSkills.size());
-                }
-            }
+            skillService.getOrCreateSkills(request.getKeySkills());
         }
 
         return baseWebClientService.post(this.webClient, "AI JD Generator", URI, request, JdGenerateResponse.class);
