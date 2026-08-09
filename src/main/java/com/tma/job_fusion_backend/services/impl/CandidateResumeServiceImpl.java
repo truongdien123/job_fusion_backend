@@ -1,9 +1,12 @@
 package com.tma.job_fusion_backend.services.impl;
 
 import com.tma.job_fusion_backend.commons.ErrorCode;
+import com.tma.job_fusion_backend.commons.RoleConstant;
+import com.tma.job_fusion_backend.components.UserPrincipal;
 import com.tma.job_fusion_backend.exceptions.BadRequestException;
 import com.tma.job_fusion_backend.exceptions.NotFoundException;
 import com.tma.job_fusion_backend.mappers.CandidateResumeMapper;
+import org.springframework.security.access.AccessDeniedException;
 import com.tma.job_fusion_backend.enums.ApplicationStatus;
 import com.tma.job_fusion_backend.models.CandidateApplication;
 import com.tma.job_fusion_backend.models.CandidateResume;
@@ -14,6 +17,7 @@ import com.tma.job_fusion_backend.repositories.CandidateApplicationRepository;
 import com.tma.job_fusion_backend.repositories.CandidateResumeRepository;
 import com.tma.job_fusion_backend.repositories.JobPostingRepository;
 import com.tma.job_fusion_backend.repositories.UserRepository;
+import com.tma.job_fusion_backend.repositories.CvMatchingResultRepository;
 import com.tma.job_fusion_backend.services.CandidateResumeService;
 import com.tma.job_fusion_backend.services.CvEvaluationService;
 import com.tma.job_fusion_backend.services.FileStorageService;
@@ -48,6 +52,7 @@ public class CandidateResumeServiceImpl implements CandidateResumeService {
     private final CandidateApplicationRepository candidateApplicationRepository;
     private final CvEvaluationService cvEvaluationService;
     private final CandidateApplicationQueryRepository candidateApplicationQueryRepository;
+    private final CvMatchingResultRepository cvMatchingResultRepository;
 
     @Override
     @Transactional
@@ -144,11 +149,28 @@ public class CandidateResumeServiceImpl implements CandidateResumeService {
 
     @Override
     @Transactional(readOnly = true)
-    public CandidateResumeResponse getResumeByJobId(UUID jobId) {
-        UUID currentUserId = getCurrentUserId();
+    public CandidateResumeResponse getResumeByJobId(UUID jobId, UUID candidateId) {
+        UserPrincipal currentUser = jwtUtil.getCurrentUser();
+        if (ObjectUtils.isEmpty(currentUser)) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        UUID targetCandidateId = candidateId;
+
+        if (currentUser.hasRole(RoleConstant.CANDIDATE)) {
+            targetCandidateId = currentUser.getId();
+        } else {
+            if (ObjectUtils.isEmpty(targetCandidateId)) {
+                throw new BadRequestException(ErrorCode.USER_NOT_FOUND);
+            }
+            JobPosting jobPosting = getJobPostingById(jobId);
+            if (ObjectUtils.isEmpty(jobPosting.getTenant()) || !currentUser.getTenantId().equals(jobPosting.getTenant().getId())) {
+                throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+            }
+        }
 
         CandidateApplication application = candidateApplicationQueryRepository
-                .findByCandidateIdAndJobIdWithResume(currentUserId, jobId)
+                .findByCandidateIdAndJobIdWithResume(targetCandidateId, jobId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.RESUME_NOT_FOUND));
 
         CandidateResume resume = application.getResume();
@@ -156,7 +178,15 @@ public class CandidateResumeServiceImpl implements CandidateResumeService {
             throw new NotFoundException(ErrorCode.RESUME_NOT_FOUND);
         }
 
-        return candidateResumeMapper.toResponse(resume);
+        CandidateResumeResponse response = candidateResumeMapper.toResponse(resume);
+
+        cvMatchingResultRepository.findByApplicationAndDeletedAtIsNull(application).ifPresent(matchingResult -> {
+            response.setMatchingScore(matchingResult.getMatchingScore());
+            response.setReasoning(matchingResult.getReasoning());
+            response.setSkillGaps(matchingResult.getSkillGaps());
+        });
+
+        return response;
     }
 
     private UUID getCurrentUserId() {

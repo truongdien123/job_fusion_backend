@@ -9,5 +9,8 @@ import org.mapstruct.Mapping;
 public interface CandidateResumeMapper {
 
     @Mapping(source = "user.id", target = "userId")
+    @Mapping(target = "matchingScore", ignore = true)
+    @Mapping(target = "reasoning", ignore = true)
+    @Mapping(target = "skillGaps", ignore = true)
     CandidateResumeResponse toResponse(CandidateResume resume);
 }

@@ -17,6 +17,9 @@ public class CandidateResumeResponse {
     private JsonNode parsedData;
     private Double candidateSelfScore;
     private JsonNode cvImprovementSuggestions;
+    private Double matchingScore;
+    private JsonNode reasoning;
+    private JsonNode skillGaps;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -1,13 +1,24 @@
 package com.tma.job_fusion_backend.repositories.query;
 
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.tma.job_fusion_backend.models.CandidateApplication;
-import com.tma.job_fusion_backend.models.QCandidateApplication;
-import com.tma.job_fusion_backend.models.QCandidateResume;
+import com.tma.job_fusion_backend.models.*;
+import com.tma.job_fusion_backend.pojo.dtos.CandidateApplicationFilter;
+import com.tma.job_fusion_backend.pojo.responses.CandidateApplicationResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,5 +42,106 @@ public class CandidateApplicationQueryRepository {
                 .fetchOne();
 
         return Optional.ofNullable(application);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CandidateApplicationResponse> findApplicationsByTenant(UUID tenantId, CandidateApplicationFilter filter, Pageable pageable) {
+        QCandidateApplication qApplication = QCandidateApplication.candidateApplication;
+        QJobPosting qJobPosting = QJobPosting.jobPosting;
+        QUser qCandidate = QUser.user;
+        QCvMatchingResult qCvMatchingResult = QCvMatchingResult.cvMatchingResult;
+
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(qApplication.deletedAt.isNull());
+        builder.and(qJobPosting.tenant.id.eq(tenantId));
+
+        if (ObjectUtils.isNotEmpty(filter)) {
+            if (StringUtils.isNotEmpty(filter.getSearch())) {
+                String search = filter.getSearch().trim();
+                builder.and(qCandidate.fullName.containsIgnoreCase(search)
+                        .or(qJobPosting.title.containsIgnoreCase(search)));
+            }
+            if (ObjectUtils.isNotEmpty(filter.getJobId())) {
+                builder.and(qJobPosting.id.eq(filter.getJobId()));
+            }
+            if (ObjectUtils.isNotEmpty(filter.getStatus())) {
+                builder.and(qApplication.status.eq(filter.getStatus()));
+            }
+            if (ObjectUtils.isNotEmpty(filter.getMatchScoreLevel())) {
+                switch (filter.getMatchScoreLevel()) {
+                    case LOW -> builder.and(qCvMatchingResult.matchingScore.goe(0.0).and(qCvMatchingResult.matchingScore.lt(50.0)));
+                    case MEDIUM -> builder.and(qCvMatchingResult.matchingScore.goe(50.0).and(qCvMatchingResult.matchingScore.lt(90.0)));
+                    case HIGH -> builder.and(qCvMatchingResult.matchingScore.goe(90.0).and(qCvMatchingResult.matchingScore.loe(100.0)));
+                }
+            }
+            if (ObjectUtils.isNotEmpty(filter.getAppliedDateFrom())) {
+                builder.and(qApplication.appliedAt.goe(filter.getAppliedDateFrom()));
+            }
+            if (ObjectUtils.isNotEmpty(filter.getAppliedDateTo())) {
+                builder.and(qApplication.appliedAt.loe(filter.getAppliedDateTo()));
+            }
+        }
+
+        List<CandidateApplicationResponse> content = queryFactory.select(Projections.constructor(CandidateApplicationResponse.class,
+                qApplication.id,
+                qCandidate.id,
+                qCandidate.fullName,
+                qCandidate.email,
+                qJobPosting.id,
+                qJobPosting.title,
+                qJobPosting.department,
+                qCvMatchingResult.matchingScore,
+                qApplication.status,
+                qApplication.appliedAt,
+                qApplication.reviewed
+        ))
+                .from(qApplication)
+                .join(qApplication.job, qJobPosting)
+                .join(qApplication.candidate, qCandidate)
+                .leftJoin(qCvMatchingResult).on(qCvMatchingResult.application.id.eq(qApplication.id)
+                        .and(qCvMatchingResult.deletedAt.isNull()))
+                .where(builder)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(getOrderSpecifiers(pageable, qApplication, qCandidate, qJobPosting, qCvMatchingResult))
+                .fetch();
+
+        Long total = queryFactory.select(qApplication.count())
+                .from(qApplication)
+                .join(qApplication.job, qJobPosting)
+                .join(qApplication.candidate, qCandidate)
+                .leftJoin(qCvMatchingResult).on(qCvMatchingResult.application.id.eq(qApplication.id)
+                        .and(qCvMatchingResult.deletedAt.isNull()))
+                .where(builder)
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
+    private OrderSpecifier<?>[] getOrderSpecifiers(Pageable pageable, QCandidateApplication qApplication, QUser qCandidate, QJobPosting qJobPosting, QCvMatchingResult qCvMatchingResult) {
+        List<OrderSpecifier<?>> specifiers = new ArrayList<>();
+        if (pageable.getSort().isSorted()) {
+            for (Sort.Order order : pageable.getSort()) {
+                boolean isAsc = order.isAscending();
+                String prop = order.getProperty();
+                if ("candidateName".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qCandidate.fullName.asc() : qCandidate.fullName.desc());
+                } else if ("jobTitle".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qJobPosting.title.asc() : qJobPosting.title.desc());
+                } else if ("matchScore".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qCvMatchingResult.matchingScore.asc() : qCvMatchingResult.matchingScore.desc());
+                } else if ("status".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qApplication.status.asc() : qApplication.status.desc());
+                } else if ("appliedAt".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qApplication.appliedAt.asc() : qApplication.appliedAt.desc());
+                } else if ("createdAt".equalsIgnoreCase(prop)) {
+                    specifiers.add(isAsc ? qApplication.createdAt.asc() : qApplication.createdAt.desc());
+                }
+            }
+        }
+        if (specifiers.isEmpty()) {
+            specifiers.add(qApplication.createdAt.desc());
+        }
+        return specifiers.toArray(new OrderSpecifier<?>[0]);
     }
 }

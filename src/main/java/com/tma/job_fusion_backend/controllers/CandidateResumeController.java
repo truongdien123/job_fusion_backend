@@ -31,10 +31,12 @@ public class CandidateResumeController {
         return ResponseUtil.success("Resume uploaded successfully", response);
     }
 
-    @GetMapping(EndpointConstant.ENDPOINT_JOB_ID)
-    @RequireRoles(RoleConstant.CANDIDATE)
-    public ResponseEntity<?> getResumeByJobId(@PathVariable("jobId") UUID jobId) {
-        CandidateResumeResponse response = candidateResumeService.getResumeByJobId(jobId);
+    @GetMapping(EndpointConstant.ENDPOINT_JOB_AND_CANDIDATE_ID)
+    @RequireRoles({RoleConstant.CANDIDATE, RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER})
+    public ResponseEntity<?> getResumeByJobId(
+            @PathVariable("jobId") UUID jobId,
+            @PathVariable("candidateId") UUID candidateId) {
+        CandidateResumeResponse response = candidateResumeService.getResumeByJobId(jobId, candidateId);
         return ResponseUtil.success("Get resume successfully", response);
     }
 }

@@ -16,6 +16,4 @@ public class Skill extends BaseEntity {
     @Column(unique = true)
     private String name;
 
-    private String category;
-
 }
