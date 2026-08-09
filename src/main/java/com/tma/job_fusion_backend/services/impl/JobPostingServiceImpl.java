@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.services.impl;
 
 import com.tma.job_fusion_backend.commons.ErrorCode;
+import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.components.UserPrincipal;
 import com.tma.job_fusion_backend.enums.JobStatus;
 import com.tma.job_fusion_backend.exceptions.BadRequestException;
@@ -86,9 +87,13 @@ public class JobPostingServiceImpl implements JobPostingService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<JobPostingResponse> getListJobPosting(PagingRequest<JobPostingFilter> request) {
-        UserPrincipal currentUser = getAndValidateUser();
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
 
         JobPostingFilter filter = ObjectUtils.isNotEmpty(request) ? request.getFilters() : null;
+        if (currentUser.hasRole(RoleConstant.CANDIDATE)) {
+            filter = ObjectUtils.isEmpty(filter) ? new JobPostingFilter() : filter;
+            filter.setStatus(JobStatus.OPEN);
+        }
         Page<JobPosting> jobPage = jobPostingQueryRepository.findAllJobPostings(currentUser.getTenantId(), filter, request.toPageable());
         Page<JobPostingResponse> mappedPage = jobPage.map(jobPostingMapper::toResponse);
 
@@ -98,9 +103,13 @@ public class JobPostingServiceImpl implements JobPostingService {
     @Override
     @Transactional(readOnly = true)
     public JobPostingResponse getJobPostingDetail(UUID id) {
-        UserPrincipal currentUser = getAndValidateUser();
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
         JobPosting jobPosting = findJobPostingById(id);
         validateTenantAccess(currentUser, jobPosting);
+
+        if (currentUser.hasRole(RoleConstant.CANDIDATE) && jobPosting.getStatus() == JobStatus.DRAFT) {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
 
         return toResponseWithRevisions(jobPosting);
     }

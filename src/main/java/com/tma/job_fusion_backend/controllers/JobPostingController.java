@@ -53,14 +53,14 @@ public class JobPostingController {
     }
 
     @PostMapping(EndpointConstant.ENDPOINT_LIST)
-    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER})
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER, RoleConstant.CANDIDATE})
     public ResponseEntity<?> getListJobPosting(@RequestBody PagingRequest<JobPostingFilter> request) {
         PageResponse<JobPostingResponse> response = jobPostingService.getListJobPosting(request);
         return ResponseUtil.success("Get job posting list successfully", response);
     }
 
     @GetMapping(EndpointConstant.ENDPOINT_ID)
-    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER})
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER, RoleConstant.CANDIDATE})
     public ResponseEntity<?> getJobPostingDetail(@PathVariable UUID id) {
         JobPostingResponse response = jobPostingService.getJobPostingDetail(id);
         return ResponseUtil.success("Get job posting detail successfully", response);

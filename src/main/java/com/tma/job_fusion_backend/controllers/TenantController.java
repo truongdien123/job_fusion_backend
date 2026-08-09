@@ -35,7 +35,7 @@ public class TenantController {
     }
 
     @PostMapping(EndpointConstant.ENDPOINT_LIST)
-    @RequireRoles(RoleConstant.SUPER_ADMIN)
+    @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.CANDIDATE})
     public ResponseEntity<?> getListTenant(@RequestBody PagingRequest<TenantFilter> request) {
         Pageable pageable = request.toPageable();
         TenantFilter filter = request.getFilters();
@@ -44,7 +44,7 @@ public class TenantController {
     }
 
     @GetMapping(EndpointConstant.ENDPOINT_ID)
-    @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN})
+    @RequireRoles({RoleConstant.SUPER_ADMIN, RoleConstant.TENANT_ADMIN, RoleConstant.CANDIDATE})
     public ResponseEntity<?> getTenantDetail(@PathVariable UUID id) {
         TenantResponse response = tenantService.getTenantDetail(id);
         return ResponseUtil.success("Get tenant detail successfully", response);
