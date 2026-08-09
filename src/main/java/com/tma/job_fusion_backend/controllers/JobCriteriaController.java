@@ -43,14 +43,14 @@ public class JobCriteriaController {
 
 
     @GetMapping(EndpointConstant.ENDPOINT_ID)
-    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER})
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER, RoleConstant.CANDIDATE})
     public ResponseEntity<?> getJobCriteriaDetail(@PathVariable UUID id) {
         JobCriteriaResponse response = jobCriteriaService.getJobCriteriaDetail(id);
         return ResponseUtil.success("Get job criteria detail successfully", response);
     }
 
     @GetMapping(EndpointConstant.ENDPOINT_JOB_ID)
-    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER})
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER, RoleConstant.CANDIDATE})
     public ResponseEntity<?> getJobCriteriaByJobId(@PathVariable UUID jobId) {
         List<JobCriteriaResponse> response = jobCriteriaService.getJobCriteriaByJobId(jobId);
         return ResponseUtil.success("Get job criteria by job successfully", response);

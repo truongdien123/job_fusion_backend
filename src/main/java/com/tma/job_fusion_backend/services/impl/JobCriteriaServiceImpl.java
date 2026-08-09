@@ -239,7 +239,8 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
     }
 
     private void validateTenantAccess(UserPrincipal currentUser, JobPosting jobPosting) {
-        if (ObjectUtils.isEmpty(jobPosting.getTenant()) || !currentUser.getTenantId().equals(jobPosting.getTenant().getId())) {
+        if (ObjectUtils.isNotEmpty(currentUser.getTenantId()) &&
+                (ObjectUtils.isEmpty(jobPosting.getTenant()) || !currentUser.getTenantId().equals(jobPosting.getTenant().getId()))) {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
     }
