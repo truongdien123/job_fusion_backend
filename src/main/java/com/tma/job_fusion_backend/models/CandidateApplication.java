@@ -34,4 +34,7 @@ public class CandidateApplication extends BaseEntity {
     @Column(name = "applied_at")
     private LocalDateTime appliedAt;
 
+    @Column(name = "reviewed", nullable = false)
+    private Boolean reviewed = false;
+
 }

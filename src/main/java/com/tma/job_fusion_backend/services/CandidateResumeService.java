@@ -6,5 +6,5 @@ import java.util.UUID;
 
 public interface CandidateResumeService {
     CandidateResumeResponse uploadResume(UUID jobId, MultipartFile file);
-    CandidateResumeResponse getResumeByJobId(UUID jobId);
+    CandidateResumeResponse getResumeByJobId(UUID jobId, UUID candidateId);
 }

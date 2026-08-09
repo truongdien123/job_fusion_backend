@@ -178,8 +178,6 @@ public class CvEvaluationServiceImpl implements CvEvaluationService {
                                 CandidateResumeSkill crs = new CandidateResumeSkill();
                                 crs.setResume(resume);
                                 crs.setSkill(skill);
-                                crs.setYearsOfExperience(null);
-                                crs.setProficiencyLevel(null);
                                 return crs;
                             })
                             .collect(Collectors.toList());

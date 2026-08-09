@@ -30,6 +30,8 @@ public final class EndpointConstant {
     public static final String ENDPOINT_CANDIDATE_BASE = "/candidate";
     public static final String ENDPOINT_CANDIDATE = ENDPOINT_PREFIX + ENDPOINT_CANDIDATE_BASE;
     public static final String ENDPOINT_CANDIDATE_RESUME = ENDPOINT_CANDIDATE + "/resume";
+    public static final String ENDPOINT_CANDIDATE_APPLICATION_BASE = "/candidate-application";
+    public static final String ENDPOINT_CANDIDATE_APPLICATION = ENDPOINT_PREFIX + ENDPOINT_CANDIDATE_APPLICATION_BASE;
 
     // Authentication methods
     public static final String ENDPOINT_SIGNIN_BASE = "/signin";
@@ -75,5 +77,6 @@ public final class EndpointConstant {
     public static final String ENDPOINT_GENERATE_JD = "/generate-jd";
     public static final String ENDPOINT_GENERATE_CRITERIA = "/generate-criteria";
     public static final String ENDPOINT_JOB_ID = "/job/{jobId}";
+    public static final String ENDPOINT_JOB_AND_CANDIDATE_ID = ENDPOINT_JOB_ID + "/candidate/{candidateId}";
     public static final String ENDPOINT_GENERATE_CRITERIA_BY_JOB_ID = ENDPOINT_JOB_ID + ENDPOINT_GENERATE_CRITERIA;
 }

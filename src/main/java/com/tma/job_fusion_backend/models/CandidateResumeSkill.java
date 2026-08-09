@@ -18,11 +18,4 @@ public class CandidateResumeSkill extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "skill_id")
     private Skill skill;
-
-    @Column(name = "years_of_experience")
-    private Integer yearsOfExperience;
-
-    @Column(name = "proficiency_level")
-    private String proficiencyLevel;
-
 }
