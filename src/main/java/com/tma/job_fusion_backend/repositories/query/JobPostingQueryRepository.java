@@ -41,6 +41,8 @@ public class JobPostingQueryRepository {
 
         if (ObjectUtils.isNotEmpty(tenantId)) {
             builder.and(qJobPosting.tenant.id.eq(tenantId));
+        } else if (ObjectUtils.isNotEmpty(filter) && ObjectUtils.isNotEmpty(filter.getTenantId())) {
+            builder.and(qJobPosting.tenant.id.eq(filter.getTenantId()));
         }
 
         if (ObjectUtils.isNotEmpty(filter)) {
