@@ -5,6 +5,8 @@ import com.tma.job_fusion_backend.enums.JobStatus;
 import com.tma.job_fusion_backend.enums.LocationType;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,4 +20,6 @@ public class JobPostingFilter {
     private EmploymentType employmentType;
     private LocationType locationType;
     private JobStatus status;
+    private UUID tenantId;
 }
+
