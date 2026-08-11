@@ -7,6 +7,7 @@ import com.tma.job_fusion_backend.enums.JobStatus;
 import com.tma.job_fusion_backend.exceptions.BadRequestException;
 import com.tma.job_fusion_backend.exceptions.NotFoundException;
 import com.tma.job_fusion_backend.mappers.JobPostingMapper;
+import com.tma.job_fusion_backend.models.CandidateApplication;
 import com.tma.job_fusion_backend.models.JobPosting;
 import com.tma.job_fusion_backend.models.Tenant;
 import com.tma.job_fusion_backend.pojo.dtos.JobPostingFilter;
@@ -14,6 +15,7 @@ import com.tma.job_fusion_backend.pojo.requests.JobPostingRequest;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
 import com.tma.job_fusion_backend.pojo.responses.JobPostingResponse;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
+import com.tma.job_fusion_backend.repositories.CandidateApplicationRepository;
 import com.tma.job_fusion_backend.repositories.JobPostingRepository;
 import com.tma.job_fusion_backend.repositories.TenantRepository;
 import com.tma.job_fusion_backend.repositories.ActivityLogRepository;
@@ -53,6 +55,7 @@ public class JobPostingServiceImpl implements JobPostingService {
     private final ActivityLogService activityLogService;
     private final ActivityLogRepository activityLogRepository;
     private final CandidateApplicationQueryRepository candidateApplicationQueryRepository;
+    private final CandidateApplicationRepository candidateApplicationRepository;
 
     @Override
     @Transactional
@@ -84,7 +87,7 @@ public class JobPostingServiceImpl implements JobPostingService {
                 JobPostingAction.CREATE
         );
 
-        return toResponseWithRevisions(savedJob);
+        return toResponseWithRevisions(savedJob, false);
     }
 
     @Override
@@ -118,6 +121,13 @@ public class JobPostingServiceImpl implements JobPostingService {
     @Transactional(readOnly = true)
     public JobPostingResponse getJobPostingDetail(UUID id) {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+        boolean flag = false;
+        if (currentUser.hasRole(RoleConstant.CANDIDATE)) {
+            CandidateApplication candidateApplication = candidateApplicationRepository
+                    .findByCandidateIdAndJobIdAndDeletedAtIsNull(currentUser.getId(), id)
+                    .orElse(null);
+            flag = ObjectUtils.isNotEmpty(candidateApplication);
+        }
         JobPosting jobPosting = findJobPostingById(id);
         validateTenantAccess(currentUser, jobPosting);
 
@@ -125,7 +135,7 @@ public class JobPostingServiceImpl implements JobPostingService {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
 
-        return toResponseWithRevisions(jobPosting);
+        return toResponseWithRevisions(jobPosting, flag);
     }
 
     @Override
@@ -170,7 +180,7 @@ public class JobPostingServiceImpl implements JobPostingService {
                 action
         );
 
-        return toResponseWithRevisions(savedJob);
+        return toResponseWithRevisions(savedJob, false);
     }
 
     @Override
@@ -257,7 +267,7 @@ public class JobPostingServiceImpl implements JobPostingService {
         validateTitleUniqueness(currentUser.getTenantId(), title, excludeId);
     }
 
-    private JobPostingResponse toResponseWithRevisions(JobPosting jobPosting) {
+    private JobPostingResponse toResponseWithRevisions(JobPosting jobPosting, boolean flag) {
         JobPostingResponse response = jobPostingMapper.toResponse(jobPosting);
         response.setNumberOfApplicant(candidateApplicationQueryRepository.countByJobId(jobPosting.getId()));
         List<ActivityLog> logs = activityLogRepository.findAllByJobPostingIdAndDeletedAtIsNullOrderByCreatedAtDesc(jobPosting.getId());
@@ -280,6 +290,7 @@ public class JobPostingServiceImpl implements JobPostingService {
                 })
                 .collect(Collectors.toList());
         response.setRevisions(revisions);
+        response.setFlag(flag);
         return response;
     }
 
