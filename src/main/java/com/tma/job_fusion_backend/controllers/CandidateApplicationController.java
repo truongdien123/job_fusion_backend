@@ -5,7 +5,9 @@ import com.tma.job_fusion_backend.commons.EndpointConstant;
 import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.pojo.dtos.CandidateApplicationFilter;
 import com.tma.job_fusion_backend.pojo.requests.PagingRequest;
+import com.tma.job_fusion_backend.pojo.requests.UpdateApplicationStatusRequest;
 import com.tma.job_fusion_backend.pojo.responses.CandidateApplicationResponse;
+import jakarta.validation.Valid;
 import com.tma.job_fusion_backend.pojo.responses.PageResponse;
 import com.tma.job_fusion_backend.services.CandidateApplicationService;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
@@ -36,5 +38,14 @@ public class CandidateApplicationController {
     public ResponseEntity<?> markAsReviewed(@PathVariable UUID id) {
         candidateApplicationService.markAsReviewed(id);
         return ResponseUtil.success("Candidate application marked as reviewed successfully", Boolean.TRUE);
+    }
+
+    @PatchMapping(EndpointConstant.ENDPOINT_APPLICATION_STATUS)
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR})
+    public ResponseEntity<?> updateStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateApplicationStatusRequest request) {
+        candidateApplicationService.updateStatus(id, request);
+        return ResponseUtil.success("Candidate application status updated successfully", Boolean.TRUE);
     }
 }

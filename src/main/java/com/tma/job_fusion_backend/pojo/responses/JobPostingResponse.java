@@ -48,6 +48,8 @@ public class JobPostingResponse {
 
     private JobStatus status;
 
+    private Long numberOfApplicant;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
