@@ -22,5 +22,6 @@ public class CvEvaluateRequest {
         private String criterionName;
         private String description;
         private Double weight;
+        private String category;
     }
 }
