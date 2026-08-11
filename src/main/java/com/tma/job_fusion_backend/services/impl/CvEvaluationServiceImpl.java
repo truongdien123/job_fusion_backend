@@ -99,6 +99,7 @@ public class CvEvaluationServiceImpl implements CvEvaluationService {
                         .criterionName(criteria.getCriterionName())
                         .description(criteria.getDescription())
                         .weight(criteria.getWeight())
+                        .category(criteria.getCategory())
                         .build())
                 .toList();
 
@@ -202,29 +203,19 @@ public class CvEvaluationServiceImpl implements CvEvaluationService {
             double matchingScore = 0.0;
 
             if (ObjectUtils.isNotEmpty(jobCriteriaList)) {
-                double weightedScoreSum = 0.0;
-                double totalWeight = 0.0;
+                double scoreSum = 0.0;
                 for (JobCriteria criterion : jobCriteriaList) {
-                    double weight = criterion.getWeight() != null ? criterion.getWeight() : 1.0;
-                    double score = 0.0;
-
                     if (ObjectUtils.isNotEmpty(suggestionsNode) && suggestionsNode.isArray()) {
                         for (JsonNode suggestion : suggestionsNode) {
                             String criterionName = suggestion.path(CRITERION_NAME).asString("");
                             if (criterion.getCriterionName().equalsIgnoreCase(criterionName)) {
-                                // Scale the 10-point AI criterion score to 100-point scale by multiplying by 10
-                                score = (suggestion.has(SCORE) ? suggestion.get(SCORE).asDouble() : 0.0) * 10.0;
+                                scoreSum += suggestion.has(SCORE) ? suggestion.get(SCORE).asDouble() : 0.0;
                                 break;
                             }
                         }
                     }
-                    weightedScoreSum += score * weight;
-                    totalWeight += weight;
                 }
-
-                if (totalWeight > 0) {
-                    matchingScore = (weightedScoreSum / (totalWeight * maxScore)) * 100.0;
-                }
+                matchingScore = scoreSum;
             } else {
                 // Fallback: take candidateSelfScore directly if available
                 if (cvEvaluateResponse.getCandidateSelfScore() != null) {
@@ -239,12 +230,25 @@ public class CvEvaluationServiceImpl implements CvEvaluationService {
                 }
             }
 
-            // Skill Gaps: suggestions where scaled score < 50.0 (out of 100.0)
+            // Skill Gaps: suggestions where weighted score is less than 50% of the weight
             ArrayNode skillGapsArray = objectMapper.createArrayNode();
             if (suggestionsNode != null && suggestionsNode.isArray()) {
                 for (JsonNode suggestion : suggestionsNode) {
-                    double score = (suggestion.has(SCORE) ? suggestion.get(SCORE).asDouble() : 0.0) * 10.0;
-                    if (score < 50.0) {
+                    String criterionName = suggestion.path(CRITERION_NAME).asString("");
+                    double weight = 1.0;
+                    if (ObjectUtils.isNotEmpty(jobCriteriaList)) {
+                        for (JobCriteria criterion : jobCriteriaList) {
+                            if (criterion.getCriterionName().equalsIgnoreCase(criterionName)) {
+                                weight = criterion.getWeight() != null ? criterion.getWeight() : 1.0;
+                                break;
+                            }
+                        }
+                    } else {
+                        weight = suggestion.has("weight") ? suggestion.get("weight").asDouble() : 1.0;
+                    }
+
+                    double score = suggestion.has(SCORE) ? suggestion.get(SCORE).asDouble() : 0.0;
+                    if (score < (weight * 0.5)) {
                         skillGapsArray.add(suggestion);
                     }
                 }
