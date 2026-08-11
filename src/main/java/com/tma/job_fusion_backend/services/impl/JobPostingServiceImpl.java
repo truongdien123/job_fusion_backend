@@ -18,6 +18,7 @@ import com.tma.job_fusion_backend.repositories.JobPostingRepository;
 import com.tma.job_fusion_backend.repositories.TenantRepository;
 import com.tma.job_fusion_backend.repositories.ActivityLogRepository;
 import com.tma.job_fusion_backend.repositories.query.JobPostingQueryRepository;
+import com.tma.job_fusion_backend.repositories.query.CandidateApplicationQueryRepository;
 import com.tma.job_fusion_backend.services.JobPostingService;
 import com.tma.job_fusion_backend.services.ActivityLogService;
 import com.tma.job_fusion_backend.enums.EventType;
@@ -28,6 +29,7 @@ import com.tma.job_fusion_backend.pojo.responses.TenantJobLimitResponse;
 import com.tma.job_fusion_backend.utils.DateTimeUtil;
 import com.tma.job_fusion_backend.utils.ValidationUtil;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.ObjectUtils;
@@ -50,6 +52,7 @@ public class JobPostingServiceImpl implements JobPostingService {
     private final ValidationUtil validationUtil;
     private final ActivityLogService activityLogService;
     private final ActivityLogRepository activityLogRepository;
+    private final CandidateApplicationQueryRepository candidateApplicationQueryRepository;
 
     @Override
     @Transactional
@@ -96,6 +99,17 @@ public class JobPostingServiceImpl implements JobPostingService {
         }
         Page<JobPosting> jobPage = jobPostingQueryRepository.findAllJobPostings(currentUser.getTenantId(), filter, request.toPageable());
         Page<JobPostingResponse> mappedPage = jobPage.map(jobPostingMapper::toResponse);
+
+        List<UUID> jobIds = jobPage.getContent().stream()
+                .map(JobPosting::getId)
+                .collect(Collectors.toList());
+
+        if (ObjectUtils.isNotEmpty(jobIds)) {
+            Map<UUID, Long> applicantCounts = candidateApplicationQueryRepository.countByJobIds(jobIds);
+            mappedPage.getContent().forEach(response ->
+                response.setNumberOfApplicant(applicantCounts.getOrDefault(response.getId(), 0L))
+            );
+        }
 
         return PageResponse.of(mappedPage);
     }
@@ -245,6 +259,7 @@ public class JobPostingServiceImpl implements JobPostingService {
 
     private JobPostingResponse toResponseWithRevisions(JobPosting jobPosting) {
         JobPostingResponse response = jobPostingMapper.toResponse(jobPosting);
+        response.setNumberOfApplicant(candidateApplicationQueryRepository.countByJobId(jobPosting.getId()));
         List<ActivityLog> logs = activityLogRepository.findAllByJobPostingIdAndDeletedAtIsNullOrderByCreatedAtDesc(jobPosting.getId());
         List<JobPostingRevisionResponse> revisions = logs.stream()
                 .filter(log -> ObjectUtils.isNotEmpty(log.getAction()))

@@ -1,6 +1,7 @@
 package com.tma.job_fusion_backend.repositories.query;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -19,8 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -143,5 +146,32 @@ public class CandidateApplicationQueryRepository {
             specifiers.add(qApplication.createdAt.desc());
         }
         return specifiers.toArray(new OrderSpecifier<?>[0]);
+    }
+
+    @Transactional(readOnly = true)
+    public long countByJobId(UUID jobId) {
+        QCandidateApplication qApplication = QCandidateApplication.candidateApplication;
+        return queryFactory.select(qApplication.count())
+                .from(qApplication)
+                .where(qApplication.job.id.eq(jobId)
+                        .and(qApplication.deletedAt.isNull()))
+                .fetchOne();
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, Long> countByJobIds(List<UUID> jobIds) {
+        QCandidateApplication qApplication = QCandidateApplication.candidateApplication;
+        List<Tuple> results = queryFactory.select(qApplication.job.id, qApplication.count())
+                .from(qApplication)
+                .where(qApplication.job.id.in(jobIds)
+                        .and(qApplication.deletedAt.isNull()))
+                .groupBy(qApplication.job.id)
+                .fetch();
+
+        return results.stream()
+                .collect(Collectors.toMap(
+                        tuple -> tuple.get(qApplication.job.id),
+                        tuple -> tuple.get(qApplication.count())
+                ));
     }
 }

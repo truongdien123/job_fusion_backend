@@ -79,4 +79,5 @@ public final class EndpointConstant {
     public static final String ENDPOINT_JOB_ID = "/job/{jobId}";
     public static final String ENDPOINT_JOB_AND_CANDIDATE_ID = ENDPOINT_JOB_ID + "/candidate/{candidateId}";
     public static final String ENDPOINT_GENERATE_CRITERIA_BY_JOB_ID = ENDPOINT_JOB_ID + ENDPOINT_GENERATE_CRITERIA;
+    public static final String ENDPOINT_APPLICATION_STATUS = ENDPOINT_ID + "/status";
 }
