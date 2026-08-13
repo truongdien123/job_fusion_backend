@@ -174,4 +174,103 @@ public class CandidateApplicationQueryRepository {
                         tuple -> tuple.get(qApplication.count())
                 ));
     }
+
+    @Transactional(readOnly = true)
+    public Optional<CandidateApplicationResponse> findApplicationDetailById(UUID id) {
+        QCandidateApplication qApplication = QCandidateApplication.candidateApplication;
+        QJobPosting qJobPosting = QJobPosting.jobPosting;
+        QUser qCandidate = QUser.user;
+        QCvMatchingResult qCvMatchingResult = QCvMatchingResult.cvMatchingResult;
+
+        CandidateApplicationResponse response = queryFactory.select(Projections.constructor(CandidateApplicationResponse.class,
+                qApplication.id,
+                qCandidate.id,
+                qCandidate.fullName,
+                qCandidate.email,
+                qJobPosting.id,
+                qJobPosting.title,
+                qJobPosting.department,
+                qCvMatchingResult.matchingScore,
+                qApplication.status,
+                qApplication.appliedAt,
+                qApplication.reviewed
+        ))
+                .from(qApplication)
+                .join(qApplication.job, qJobPosting)
+                .join(qApplication.candidate, qCandidate)
+                .leftJoin(qCvMatchingResult).on(qCvMatchingResult.application.id.eq(qApplication.id)
+                        .and(qCvMatchingResult.deletedAt.isNull()))
+                .where(qApplication.id.eq(id)
+                        .and(qApplication.deletedAt.isNull()))
+                .fetchOne();
+
+        return Optional.ofNullable(response);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CandidateApplicationResponse> findApplicationsByCandidate(UUID candidateId, CandidateApplicationFilter filter, Pageable pageable) {
+        QCandidateApplication qApplication = QCandidateApplication.candidateApplication;
+        QJobPosting qJobPosting = QJobPosting.jobPosting;
+        QUser qCandidate = QUser.user;
+        QCvMatchingResult qCvMatchingResult = QCvMatchingResult.cvMatchingResult;
+
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(qApplication.deletedAt.isNull());
+        builder.and(qApplication.candidate.id.eq(candidateId));
+
+        if (ObjectUtils.isNotEmpty(filter)) {
+            if (StringUtils.isNotEmpty(filter.getSearch())) {
+                String search = filter.getSearch().trim();
+                builder.and(qJobPosting.title.containsIgnoreCase(search));
+            }
+            if (ObjectUtils.isNotEmpty(filter.getJobId())) {
+                builder.and(qJobPosting.id.eq(filter.getJobId()));
+            }
+            if (ObjectUtils.isNotEmpty(filter.getStatus())) {
+                builder.and(qApplication.status.eq(filter.getStatus()));
+            }
+            if (ObjectUtils.isNotEmpty(filter.getAppliedDateFrom())) {
+                builder.and(qApplication.appliedAt.goe(filter.getAppliedDateFrom()));
+            }
+            if (ObjectUtils.isNotEmpty(filter.getAppliedDateTo())) {
+                builder.and(qApplication.appliedAt.loe(filter.getAppliedDateTo()));
+            }
+        }
+
+        List<CandidateApplicationResponse> content = queryFactory.select(Projections.constructor(CandidateApplicationResponse.class,
+                qApplication.id,
+                qCandidate.id,
+                qCandidate.fullName,
+                qCandidate.email,
+                qJobPosting.id,
+                qJobPosting.title,
+                qJobPosting.department,
+                qCvMatchingResult.matchingScore,
+                qApplication.status,
+                qApplication.appliedAt,
+                qApplication.reviewed
+        ))
+                .from(qApplication)
+                .join(qApplication.job, qJobPosting)
+                .join(qApplication.candidate, qCandidate)
+                .leftJoin(qCvMatchingResult).on(qCvMatchingResult.application.id.eq(qApplication.id)
+                        .and(qCvMatchingResult.deletedAt.isNull()))
+                .where(builder)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(getOrderSpecifiers(pageable, qApplication, qCandidate, qJobPosting, qCvMatchingResult))
+                .fetch();
+
+        Long total = queryFactory.select(qApplication.count())
+                .from(qApplication)
+                .join(qApplication.job, qJobPosting)
+                .join(qApplication.candidate, qCandidate)
+                .leftJoin(qCvMatchingResult).on(qCvMatchingResult.application.id.eq(qApplication.id)
+                        .and(qCvMatchingResult.deletedAt.isNull()))
+                .where(builder)
+                .fetchOne();
+
+        return new PageImpl<>(content, pageable, total);
+    }
 }
+

@@ -36,11 +36,24 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CandidateApplicationResponse> getApplications(PagingRequest<CandidateApplicationFilter> request) {
-        UserPrincipal currentUser = getCurrentUser();
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
 
         Pageable pageable = request.toPageable();
         CandidateApplicationFilter filter = request.getFilters();
-        Page<CandidateApplicationResponse> page = queryRepository.findApplicationsByTenant(currentUser.getTenantId(), filter, pageable);
+        
+        Page<CandidateApplicationResponse> page;
+        if (currentUser.hasRole(RoleConstant.CANDIDATE)) {
+            page = queryRepository.findApplicationsByCandidate(currentUser.getId(), filter, pageable);
+        } else if (currentUser.hasRole(RoleConstant.TENANT_ADMIN) || 
+                   currentUser.hasRole(RoleConstant.HR) || 
+                   currentUser.hasRole(RoleConstant.INTERVIEWER)) {
+            if (ObjectUtils.isEmpty(currentUser.getTenantId())) {
+                throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+            }
+            page = queryRepository.findApplicationsByTenant(currentUser.getTenantId(), filter, pageable);
+        } else {
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
 
         return PageResponse.of(page);
     }
@@ -83,10 +96,48 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
         candidateApplicationRepository.save(application);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public CandidateApplicationResponse getApplicationDetail(UUID id) {
+        UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
+
+        // 1. Fetch CandidateApplication entity to perform role and tenant ownership check
+        CandidateApplication application = candidateApplicationRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.APPLICATION_NOT_FOUND));
+
+        // 2. Perform security & multitenancy checks
+        if (currentUser.hasRole(RoleConstant.CANDIDATE)) {
+            // Candidates can only view their own applications
+            if (ObjectUtils.isEmpty(application.getCandidate()) || 
+                !currentUser.getId().equals(application.getCandidate().getId())) {
+                throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+            }
+        } else if (currentUser.hasRole(RoleConstant.TENANT_ADMIN) || 
+                   currentUser.hasRole(RoleConstant.HR) || 
+                   currentUser.hasRole(RoleConstant.INTERVIEWER)) {
+            // Tenant users (Tenant Admin, HR, Interviewer) can only view applications belonging to their tenant
+            if (ObjectUtils.isEmpty(application.getJob()) || 
+                ObjectUtils.isEmpty(application.getJob().getTenant()) || 
+                !currentUser.getTenantId().equals(application.getJob().getTenant().getId())) {
+                throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+            }
+        } else {
+            // Any other role is denied access
+            throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 3. Fetch projection response from the query repository
+        return queryRepository.findApplicationDetailById(id)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.APPLICATION_NOT_FOUND));
+    }
+
     private UserPrincipal getCurrentUser() {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
 
-        if (ObjectUtils.isEmpty(currentUser.getTenantId()) || (!currentUser.hasRole(RoleConstant.HR))) {
+        if (ObjectUtils.isEmpty(currentUser.getTenantId()) || 
+            (!currentUser.hasRole(RoleConstant.HR) && 
+             !currentUser.hasRole(RoleConstant.TENANT_ADMIN) && 
+             !currentUser.hasRole(RoleConstant.INTERVIEWER))) {
             throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
         }
         return currentUser;
