@@ -27,7 +27,7 @@ public class CandidateApplicationController {
     private final CandidateApplicationService candidateApplicationService;
 
     @PostMapping(EndpointConstant.ENDPOINT_LIST)
-    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER})
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER, RoleConstant.CANDIDATE})
     public ResponseEntity<?> getListCandidateApplications(@RequestBody PagingRequest<CandidateApplicationFilter> request) {
         PageResponse<CandidateApplicationResponse> response = candidateApplicationService.getApplications(request);
         return ResponseUtil.success("Get candidate applications successfully", response);
@@ -47,5 +47,12 @@ public class CandidateApplicationController {
             @Valid @RequestBody UpdateApplicationStatusRequest request) {
         candidateApplicationService.updateStatus(id, request);
         return ResponseUtil.success("Candidate application status updated successfully", Boolean.TRUE);
+    }
+
+    @GetMapping(EndpointConstant.ENDPOINT_ID)
+    @RequireRoles({RoleConstant.TENANT_ADMIN, RoleConstant.HR, RoleConstant.INTERVIEWER, RoleConstant.CANDIDATE})
+    public ResponseEntity<?> getCandidateApplicationDetail(@PathVariable UUID id) {
+        CandidateApplicationResponse response = candidateApplicationService.getApplicationDetail(id);
+        return ResponseUtil.success("Get candidate application detail successfully", response);
     }
 }

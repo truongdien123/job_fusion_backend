@@ -12,4 +12,5 @@ public interface CandidateApplicationService {
     PageResponse<CandidateApplicationResponse> getApplications(PagingRequest<CandidateApplicationFilter> request);
     void markAsReviewed(UUID id);
     void updateStatus(UUID id, UpdateApplicationStatusRequest request);
+    CandidateApplicationResponse getApplicationDetail(UUID id);
 }
