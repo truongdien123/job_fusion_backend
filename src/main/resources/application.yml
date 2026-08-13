@@ -38,4 +38,4 @@ app:
 
 ai-service:
   url: ${AI_SERVICE_URL}
-  timeout-seconds: 90
+  timeout-seconds: 300
