@@ -5,7 +5,7 @@ import com.tma.job_fusion_backend.pojo.requests.JobCriteriaRequest;
 import com.tma.job_fusion_backend.pojo.responses.JobCriteriaResponse;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(config = GlobalConfigMapper.class)
 public interface JobCriteriaMapper {
 
     JobCriteria toEntity(JobCriteriaRequest request);

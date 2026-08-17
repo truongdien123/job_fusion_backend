@@ -4,6 +4,7 @@ import com.tma.job_fusion_backend.models.Plan;
 import com.tma.job_fusion_backend.pojo.responses.DashboardStatsTenantResponse;
 import com.tma.job_fusion_backend.pojo.responses.DashboardStatsPlanResponse;
 import com.tma.job_fusion_backend.pojo.responses.DashboardStatsJobPostingResponse;
+import com.tma.job_fusion_backend.pojo.responses.DashboardStatsSuperAdminResponse;
 import com.tma.job_fusion_backend.repositories.query.TenantQueryRepository;
 import com.tma.job_fusion_backend.repositories.query.PlanQueryRepository;
 import com.tma.job_fusion_backend.repositories.query.JobPostingQueryRepository;
@@ -69,22 +70,14 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         // 4. Calculate the current Monthly Recurring Revenue (MRR)
-        Double currentRevenue = tenantQueryRepository.calculateMonthlyActivePlanRevenue();
-        // 5. Calculate the Monthly Recurring Revenue (MRR) of the previous month
-        Double lastMonthRevenue = tenantQueryRepository.calculateMonthlyActivePlanRevenueLastMonth();
-        
-        // 6. Calculate the revenue growth trend: % change in MRR compared to last month
-        Double revenueTrend = 0.0;
-        if (lastMonthRevenue > 0) {
-            revenueTrend = ((currentRevenue - lastMonthRevenue) / lastMonthRevenue) * 100.0;
-        } else if (currentRevenue > 0) {
-            revenueTrend = 100.0;
-        }
+        Double currentRevenue = getMonthlyActivePlanRevenue();
+        // 5. Calculate the Monthly Recurring Revenue Trend
+        Double revenueTrend = getMonthlyRecurringRevenueTrend(currentRevenue);
 
         // 7. Calculate the churn rate for the current quarter
         Double churnRate = tenantQueryRepository.calculateChurnRate();
         // 8. Renewal Rate = 100% - Churn Rate
-        Double renewalRate = 100.0 - churnRate;
+        double renewalRate = 100.0 - churnRate;
         // 9. Renewal rate trend compared to the target goal of 93.7%
         Double renewalRateTrend = renewalRate - 93.7;
 
@@ -112,4 +105,61 @@ public class DashboardServiceImpl implements DashboardService {
 
         return jobPostingQueryRepository.getJobPostingStats(tenantId, 7);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DashboardStatsSuperAdminResponse getDashboardStatsSuperAdmin() {
+        // 1. Calculate Total Tenants (current and last month) and compute trend
+        Long currentTotalTenants = tenantQueryRepository.countTotalTenants();
+        Long lastMonthTotalTenants = tenantQueryRepository.countTotalTenantsLastMonth();
+        double totalTenantsTrend = 0.0;
+        if (lastMonthTotalTenants > 0) {
+            totalTenantsTrend = ((double) (currentTotalTenants - lastMonthTotalTenants) / lastMonthTotalTenants) * 100.0;
+        } else if (currentTotalTenants > 0) {
+            totalTenantsTrend = 100.0;
+        }
+
+        // 2. Calculate Active Tenants (current and last month) and compute trend
+        Long currentActiveTenants = tenantQueryRepository.countActiveTenants();
+        Long lastMonthActiveTenants = tenantQueryRepository.countActiveTenantsLastMonth();
+        double activeTenantsTrend = 0.0;
+        if (lastMonthActiveTenants > 0) {
+            activeTenantsTrend = ((double) (currentActiveTenants - lastMonthActiveTenants) / lastMonthActiveTenants) * 100.0;
+        } else if (currentActiveTenants > 0) {
+            activeTenantsTrend = 100.0;
+        }
+
+        // 3. Calculate Monthly Recurring Revenue (current and last month) and compute trend
+        Double currentMRR = getMonthlyActivePlanRevenue();
+        Double mrrTrend = getMonthlyRecurringRevenueTrend(currentMRR);
+
+        // 4. Calculate Tenants expiring within 30 days
+        Long tenantsExpiringWithin30Days = tenantQueryRepository.countTenantsExpiringWithin30Days();
+
+        return DashboardStatsSuperAdminResponse.builder()
+                .totalTenants(currentTotalTenants)
+                .totalTenantsTrend(totalTenantsTrend)
+                .activeTenants(currentActiveTenants)
+                .activeTenantsTrend(activeTenantsTrend)
+                .monthlyRecurringRevenue(currentMRR)
+                .monthlyRecurringRevenueTrend(mrrTrend)
+                .tenantsExpiringWithin30Days(Objects.requireNonNullElse(tenantsExpiringWithin30Days, 0L))
+                .build();
+    }
+
+    private double getMonthlyActivePlanRevenue() {
+        return tenantQueryRepository.calculateMonthlyActivePlanRevenue();
+    }
+
+    private double getMonthlyRecurringRevenueTrend(Double currentMRR) {
+        double lastMonthMRR = tenantQueryRepository.calculateMonthlyActivePlanRevenueLastMonth();
+        double mrrTrend = 0.0;
+        if (lastMonthMRR > 0) {
+            mrrTrend = ((currentMRR - lastMonthMRR) / lastMonthMRR) * 100.0;
+        } else if (currentMRR > 0) {
+            mrrTrend = 100.0;
+        }
+        return mrrTrend;
+    }
 }
+

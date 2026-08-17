@@ -14,6 +14,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_ACTIVITY_LOG_BASE = "/activity-log";
     public static final String ENDPOINT_JOB_POSTING_BASE = "/job-posting";
     public static final String ENDPOINT_JOB_CRITERIA_BASE = "/job-criteria";
+    public static final String ENDPOINT_AI_HISTORY_BASE = "/ai-history";
     public static final String ENDPOINT_LIMIT = "/limit";
 
     // Core endpoints with /api
@@ -25,6 +26,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_ACTIVITY_LOG = ENDPOINT_PREFIX + ENDPOINT_ACTIVITY_LOG_BASE;
     public static final String ENDPOINT_JOB_POSTING = ENDPOINT_PREFIX + ENDPOINT_JOB_POSTING_BASE;
     public static final String ENDPOINT_JOB_CRITERIA = ENDPOINT_PREFIX + ENDPOINT_JOB_CRITERIA_BASE;
+    public static final String ENDPOINT_AI_HISTORY = ENDPOINT_PREFIX + ENDPOINT_AI_HISTORY_BASE;
     public static final String ENDPOINT_UPLOAD_BASE = "/upload";
     public static final String ENDPOINT_UPLOAD = ENDPOINT_PREFIX + ENDPOINT_UPLOAD_BASE;
     public static final String ENDPOINT_CANDIDATE_BASE = "/candidate";
@@ -67,6 +69,7 @@ public final class EndpointConstant {
     public static final String ENDPOINT_STATS = "/stats";
     public static final String ENDPOINT_STATS_TENANT = ENDPOINT_STATS + ENDPOINT_TENANT_BASE;
     public static final String ENDPOINT_STATS_PLAN = ENDPOINT_STATS + ENDPOINT_PLAN_BASE;
+    public static final String ENDPOINT_STATS_SUPER_ADMIN = ENDPOINT_STATS + "/super-admin";
     public static final String ENDPOINT_STATS_JOB_POSTING = ENDPOINT_STATS + ENDPOINT_JOB_POSTING_BASE;
     public static final String ENDPOINT_STAFF_LIST = ENDPOINT_STAFF_BASE + ENDPOINT_LIST;
     public static final String ENDPOINT_STAFF_ID = ENDPOINT_STAFF_BASE + ENDPOINT_ID;
