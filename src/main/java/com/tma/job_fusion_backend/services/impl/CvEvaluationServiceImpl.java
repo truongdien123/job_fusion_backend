@@ -43,12 +43,13 @@ public class CvEvaluationServiceImpl implements CvEvaluationService {
     private final CandidateResumeSkillRepository candidateResumeSkillRepository;
     private final CvMatchingResultRepository cvMatchingResultRepository;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     private final String SCORE = "score";
     private final String SKILLS = "skills";
     private final String CRITERION_NAME = "criterionName";
     private final String SUGGESTIONS = "suggestions";
+    private final String WEIGHT = "weight";
 
     @Override
     @Transactional
@@ -57,7 +58,7 @@ public class CvEvaluationServiceImpl implements CvEvaluationService {
 
         // Soft delete CandidateResumeSkill records
         List<CandidateResumeSkill> activeSkills = candidateResumeSkillRepository.findByResumeAndDeletedAtIsNull(resume);
-        if (activeSkills != null && !activeSkills.isEmpty()) {
+        if (ObjectUtils.isNotEmpty(activeSkills)) {
             for (CandidateResumeSkill crs : activeSkills) {
                 crs.setDeletedAt(now);
             }
@@ -244,7 +245,7 @@ public class CvEvaluationServiceImpl implements CvEvaluationService {
                             }
                         }
                     } else {
-                        weight = suggestion.has("weight") ? suggestion.get("weight").asDouble() : 1.0;
+                        weight = suggestion.has(WEIGHT) ? suggestion.get(WEIGHT).asDouble() : 1.0;
                     }
 
                     double score = suggestion.has(SCORE) ? suggestion.get(SCORE).asDouble() : 0.0;

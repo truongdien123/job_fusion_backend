@@ -36,10 +36,10 @@ public class EmailServiceImpl implements EmailService {
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
-    public EmailServiceImpl(EmailLogRepository emailLogRepository, TemplateEngine templateEngine) {
+    public EmailServiceImpl(EmailLogRepository emailLogRepository, TemplateEngine templateEngine, ObjectMapper objectMapper) {
         this.emailLogRepository = emailLogRepository;
         this.templateEngine = templateEngine;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newHttpClient();
     }
 

@@ -10,6 +10,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -34,11 +35,13 @@ public class CvAiServiceImpl implements CvAiService {
     private final String EVALUATE_URI = "/api/v1/cv/evaluate";
 
     private final WebClient webClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public CvAiServiceImpl(
             @Value("${ai-service.url}") String apiBaseUrl,
-            @Value("${ai-service.timeout-seconds}") int timeoutSeconds) {
+            @Value("${ai-service.timeout-seconds}") int timeoutSeconds,
+            ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
         
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
@@ -76,13 +79,13 @@ public class CvAiServiceImpl implements CvAiService {
         }
         builder.part("criteria", criteriaJson);
 
-        if (jobTitle != null) {
+        if (StringUtils.isNotEmpty(jobTitle)) {
             builder.part("job_title", jobTitle);
         }
-        if (jobDescription != null) {
+        if (StringUtils.isNotEmpty(jobDescription)) {
             builder.part("job_description", jobDescription);
         }
-        if (jobRequirements != null) {
+        if (StringUtils.isNotEmpty(jobRequirements)) {
             builder.part("job_requirements", jobRequirements);
         }
 

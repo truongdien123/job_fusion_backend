@@ -100,7 +100,7 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
                 if (ObjectUtils.isEmpty(jobCriteria)) {
                     throw new BadRequestException(ErrorCode.JOB_CRITERIA_NOT_FOUND);
                 }
-                jobCriteriaMapper.updateEntityFromRequest(req, jobCriteria);
+                jobCriteriaMapper.updateEntity(req, jobCriteria);
                 jobCriteria.setUpdatedBy(currentUser.getId());
                 jobCriteriaList.add(jobCriteria);
                 processedIds.add(req.getId());
@@ -182,7 +182,7 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
             jobCriteria.setJob(newJobPosting);
         }
 
-        jobCriteriaMapper.updateEntityFromRequest(request, jobCriteria);
+        jobCriteriaMapper.updateEntity(request, jobCriteria);
         jobCriteria.setUpdatedBy(currentUser.getId());
 
         JobCriteria saved = jobCriteriaRepository.save(jobCriteria);
@@ -246,7 +246,7 @@ public class JobCriteriaServiceImpl implements JobCriteriaService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CriteriaAiGenerateResponse generateJobCriteria(UUID jobId) {
         UserPrincipal currentUser = validationUtil.getRequiredCurrentUser();
         JobPosting jobPosting = findJobPostingById(jobId);

@@ -166,7 +166,7 @@ public class JobPostingServiceImpl implements JobPostingService {
             description = "Closed job posting: " + jobPosting.getTitle();
         }
 
-        jobPostingMapper.updateEntityFromRequest(request, jobPosting);
+        jobPostingMapper.updateEntity(request, jobPosting);
         jobPosting.setStatus(targetStatus);
         jobPosting.setUpdatedBy(currentUser.getId());
 

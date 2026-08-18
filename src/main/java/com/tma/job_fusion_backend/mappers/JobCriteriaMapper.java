@@ -6,12 +6,8 @@ import com.tma.job_fusion_backend.pojo.responses.JobCriteriaResponse;
 import org.mapstruct.*;
 
 @Mapper(config = GlobalConfigMapper.class)
-public interface JobCriteriaMapper {
-
-    JobCriteria toEntity(JobCriteriaRequest request);
+public interface JobCriteriaMapper extends EntityMapper<JobCriteriaRequest, JobCriteriaResponse, JobCriteria> {
 
     @Mapping(target = "jobId", source = "job.id")
     JobCriteriaResponse toResponse(JobCriteria jobCriteria);
-
-    void updateEntityFromRequest(JobCriteriaRequest request, @MappingTarget JobCriteria jobCriteria);
 }

@@ -2,6 +2,7 @@ package com.tma.job_fusion_backend.services.impl;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.tma.job_fusion_backend.commons.ErrorCode;
+import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.components.UserPrincipal;
 import com.tma.job_fusion_backend.enums.*;
 import com.tma.job_fusion_backend.exceptions.*;
@@ -72,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
         savedUser.setCreatedBy(savedUser.getId());
         savedUser.setUpdatedBy(savedUser.getId());
-        return userMapper.toUserResponse(savedUser);
+        return userMapper.toUserResponse(savedUser, RoleConstant.CANDIDATE);
     }
 
     @Override
@@ -225,10 +226,7 @@ public class AuthServiceImpl implements AuthService {
         // Pre-warm RAM Cache upon authentication/login so filter never hits DB
         userAuthCacheService.updatePasswordChangedAt(user.getId(), user.getPasswordChangedAt());
 
-        UserResponse userResponse = userMapper.toUserResponse(user);
-        userResponse.setUserRole(resolvedRole);
-        userResponse.setPlanId(ObjectUtils.isNotEmpty(user.getTenant()) ? user.getTenant().getPlan().getId() : null);
-        userResponse.setRequirePasswordChange(mustChangePassword);
+        UserResponse userResponse = userMapper.toUserResponse(user, resolvedRole);
 
         return AuthResponse.builder()
                 .token(token)
