@@ -6,6 +6,7 @@ import com.tma.job_fusion_backend.commons.RoleConstant;
 import com.tma.job_fusion_backend.pojo.responses.DashboardStatsTenantResponse;
 import com.tma.job_fusion_backend.pojo.responses.DashboardStatsPlanResponse;
 import com.tma.job_fusion_backend.pojo.responses.DashboardStatsJobPostingResponse;
+import com.tma.job_fusion_backend.pojo.responses.DashboardStatsSuperAdminResponse;
 import com.tma.job_fusion_backend.services.DashboardService;
 import com.tma.job_fusion_backend.utils.ResponseUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +36,13 @@ public class DashboardController {
     public ResponseEntity<?> getDashboardStatsPlan() {
         DashboardStatsPlanResponse response = dashboardService.getDashboardStatsPlan();
         return ResponseUtil.success("Get plan dashboard stats successfully", response);
+    }
+
+    @GetMapping(EndpointConstant.ENDPOINT_STATS_SUPER_ADMIN)
+    @RequireRoles(RoleConstant.SUPER_ADMIN)
+    public ResponseEntity<?> getDashboardStatsSuperAdmin() {
+        DashboardStatsSuperAdminResponse response = dashboardService.getDashboardStatsSuperAdmin();
+        return ResponseUtil.success("Get super admin dashboard stats successfully", response);
     }
 
     @GetMapping(EndpointConstant.ENDPOINT_STATS_JOB_POSTING)

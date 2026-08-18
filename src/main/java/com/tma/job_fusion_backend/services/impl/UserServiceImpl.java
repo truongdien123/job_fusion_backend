@@ -294,8 +294,6 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserResponse mapToUserResponse(User user, String roles) {
-        UserResponse response = userMapper.toUserResponse(user);
-        response.setUserRole(roles);
-        return response;
+        return userMapper.toUserResponse(user, roles);
     }
 }

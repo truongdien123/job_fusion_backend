@@ -383,4 +383,62 @@ public class TenantQueryRepository {
                 .fetchOne();
         return sum != null ? sum : 0.0;
     }
+
+    @Transactional(readOnly = true)
+    public Long countTotalTenants() {
+        QTenant qTenant = QTenant.tenant;
+        return queryFactory.select(qTenant.count())
+                .from(qTenant)
+                .where(qTenant.deletedAt.isNull())
+                .fetchOne();
+    }
+
+    @Transactional(readOnly = true)
+    public Long countTotalTenantsLastMonth() {
+        QTenant qTenant = QTenant.tenant;
+        LocalDateTime startOfCurrentMonth = DateTimeUtil.nowUtc()
+                .withDayOfMonth(1)
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+        return queryFactory.select(qTenant.count())
+                .from(qTenant)
+                .where(qTenant.createdAt.lt(startOfCurrentMonth)
+                        .and(qTenant.deletedAt.isNull().or(qTenant.deletedAt.goe(startOfCurrentMonth))))
+                .fetchOne();
+    }
+
+    @Transactional(readOnly = true)
+    public Long countActiveTenantsLastMonth() {
+        QTenant qTenant = QTenant.tenant;
+        LocalDateTime startOfCurrentMonth = DateTimeUtil.nowUtc()
+                .withDayOfMonth(1)
+                .withHour(0)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
+        return queryFactory.select(qTenant.count())
+                .from(qTenant)
+                .where(qTenant.status.eq(TenantStatus.ACTIVE)
+                        .and(qTenant.createdAt.lt(startOfCurrentMonth)
+                                .and(qTenant.deletedAt.isNull().or(qTenant.deletedAt.goe(startOfCurrentMonth)))))
+                .fetchOne();
+    }
+
+    @Transactional(readOnly = true)
+    public Long countTenantsExpiringWithin30Days() {
+        QTenant qTenant = QTenant.tenant;
+        LocalDateTime now = DateTimeUtil.nowUtc();
+        LocalDateTime threshold = now.plusDays(30);
+        return queryFactory.select(qTenant.count())
+                .from(qTenant)
+                .where(qTenant.status.eq(TenantStatus.ACTIVE)
+                        .and(qTenant.deletedAt.isNull())
+                        .and(qTenant.expirationDate.isNotNull())
+                        .and(qTenant.expirationDate.goe(now))
+                        .and(qTenant.expirationDate.loe(threshold)))
+                .fetchOne();
+    }
 }
+

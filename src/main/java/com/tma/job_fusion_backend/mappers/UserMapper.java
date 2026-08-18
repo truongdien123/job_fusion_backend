@@ -8,11 +8,12 @@ import com.tma.job_fusion_backend.models.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(config = GlobalConfigMapper.class)
 public interface UserMapper {
 
-    @Mapping(source = "tenant.id", target = "tenantId")
-    UserResponse toUserResponse(User user);
+    @Mapping(source = "user.tenant.id", target = "tenantId")
+    @Mapping(source = "user.tenant.plan.id", target = "planId")
+    UserResponse toUserResponse(User user, String userRole);
 
     @ToEntityMapping
     User toEntity(SignUpRequest request);

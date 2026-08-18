@@ -122,7 +122,7 @@ public class TenantServiceImpl implements TenantService {
                         .build()
         );
 
-        return tenantMapper.toTenantResponse(savedTenant, savedAdminUser.getId(), 0L, 0L);
+        return tenantMapper.toResponse(savedTenant, savedAdminUser.getId(), 0L, 0L);
     }
 
     @Override
@@ -140,7 +140,7 @@ public class TenantServiceImpl implements TenantService {
 
         long activeUsers = userQueryRepository.countStaffByTenantId(tenant.getId(), RoleConstant.TENANT_ADMIN);
         long activeJob = jobPostingRepository.countByTenantIdAndStatusAndDeletedAtIsNull(tenant.getId(), JobStatus.OPEN);
-        return tenantMapper.toTenantResponse(tenant, adminUserId, activeUsers, activeJob);
+        return tenantMapper.toResponse(tenant, adminUserId, activeUsers, activeJob);
     }
 
     @Override
@@ -179,7 +179,7 @@ public class TenantServiceImpl implements TenantService {
             tenant.setStatus(request.getStatus());
         }
 
-        tenantMapper.updateTenant(request, tenant);
+        tenantMapper.updateEntity(request, tenant);
         tenant.setUpdatedBy(currentUser.getId());
 
         Tenant savedTenant = tenantRepository.save(tenant);
@@ -188,7 +188,7 @@ public class TenantServiceImpl implements TenantService {
 
         long activeUsers = userQueryRepository.countStaffByTenantId(savedTenant.getId(), RoleConstant.TENANT_ADMIN);
         long activeJob = jobPostingRepository.countByTenantIdAndStatusAndDeletedAtIsNull(savedTenant.getId(), JobStatus.OPEN);
-        return tenantMapper.toTenantResponse(savedTenant, adminUserId, activeUsers, activeJob);
+        return tenantMapper.toResponse(savedTenant, adminUserId, activeUsers, activeJob);
     }
 
     @Override

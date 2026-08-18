@@ -5,13 +5,9 @@ import com.tma.job_fusion_backend.pojo.requests.JobCriteriaRequest;
 import com.tma.job_fusion_backend.pojo.responses.JobCriteriaResponse;
 import org.mapstruct.*;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface JobCriteriaMapper {
-
-    JobCriteria toEntity(JobCriteriaRequest request);
+@Mapper(config = GlobalConfigMapper.class)
+public interface JobCriteriaMapper extends EntityMapper<JobCriteriaRequest, JobCriteriaResponse, JobCriteria> {
 
     @Mapping(target = "jobId", source = "job.id")
     JobCriteriaResponse toResponse(JobCriteria jobCriteria);
-
-    void updateEntityFromRequest(JobCriteriaRequest request, @MappingTarget JobCriteria jobCriteria);
 }

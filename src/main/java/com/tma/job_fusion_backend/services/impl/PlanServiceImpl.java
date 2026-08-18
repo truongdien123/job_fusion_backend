@@ -77,7 +77,7 @@ public class PlanServiceImpl implements PlanService {
             throw new BadRequestException(ErrorCode.PLAN_ALREADY_EXISTS);
         }
 
-        planMapper.updatePlan(request, plan);
+        planMapper.updateEntity(request, plan);
 
         plan.setMaxStaffAccount(Boolean.TRUE.equals(request.getStaffAccountUnlimited()) ? null : request.getMaxStaffAccount());
         plan.setMaxActiveJobPosting(Boolean.TRUE.equals(request.getActiveJobPostingUnlimited()) ? null : request.getMaxActiveJobPosting());
@@ -119,7 +119,7 @@ public class PlanServiceImpl implements PlanService {
     }
 
     private PlanResponse buildResponse(Plan plan) {
-        PlanResponse response = planMapper.toPlanResponse(plan);
+        PlanResponse response = planMapper.toResponse(plan);
         response.setFeatures(JsonUtil.convertJsonToFeatures(plan.getFeature()));
         return response;
     }

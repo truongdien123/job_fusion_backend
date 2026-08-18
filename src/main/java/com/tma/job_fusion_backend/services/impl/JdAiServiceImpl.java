@@ -8,6 +8,7 @@ import com.tma.job_fusion_backend.pojo.requests.CriteriaAiGenerateRequest;
 import com.tma.job_fusion_backend.services.SkillService;
 import com.tma.job_fusion_backend.services.BaseWebClientService;
 import com.tma.job_fusion_backend.services.JdAiService;
+import com.tma.job_fusion_backend.services.AiGenerationHistoryService;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
@@ -38,14 +39,17 @@ public class JdAiServiceImpl implements JdAiService {
     private final WebClient webClient;
     private final SkillService skillService;
     private final BaseWebClientService baseWebClientService;
+    private final AiGenerationHistoryService aiGenerationHistoryService;
 
     public JdAiServiceImpl(
             @Value("${ai-service.url}") String apiBaseUrl,
             @Value("${ai-service.timeout-seconds}") int timeoutSeconds,
             SkillService skillService,
-            BaseWebClientService baseWebClientService) {
+            BaseWebClientService baseWebClientService,
+            AiGenerationHistoryService aiGenerationHistoryService) {
         this.skillService = skillService;
         this.baseWebClientService = baseWebClientService;
+        this.aiGenerationHistoryService = aiGenerationHistoryService;
         
         // Configure netty HttpClient with timeouts tailored for local LLM usage
         HttpClient httpClient = HttpClient.create()
@@ -70,12 +74,21 @@ public class JdAiServiceImpl implements JdAiService {
             skillService.getOrCreateSkills(request.getKeySkills());
         }
 
-        return baseWebClientService.post(this.webClient, "AI JD Generator", URI, request, JdGenerateResponse.class);
+        JdGenerateResponse response = baseWebClientService.post(this.webClient, "AI JD Generator", URI, request, JdGenerateResponse.class);
+        if (response != null) {
+            aiGenerationHistoryService.saveHistory("JOB_POSTING", request, response);
+        }
+        return response;
     }
 
     @Override
+    @Transactional
     public CriteriaAiGenerateResponse generateJobCriteria(CriteriaAiGenerateRequest request) {
         log.info("Sending request to AI Criteria Generator service for title: {}", request.getJobTitle());
-        return baseWebClientService.post(this.webClient, "AI Criteria Generator", CRITERIA_URI, request, CriteriaAiGenerateResponse.class);
+        CriteriaAiGenerateResponse response = baseWebClientService.post(this.webClient, "AI Criteria Generator", CRITERIA_URI, request, CriteriaAiGenerateResponse.class);
+        if (response != null) {
+            aiGenerationHistoryService.saveHistory("JOB_CRITERIA", request, response);
+        }
+        return response;
     }
 }
